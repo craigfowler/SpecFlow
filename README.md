@@ -1,3 +1,12 @@
+# Archived repository
+
+[SpecFlow has closed down and its main git repositories set to private](https://support-hub.tricentis.com/open?number=NEW0001432&id=post), making them inaccessible.
+This repository is just a way for me to archive its most recent open source codebase in an accessible manner.
+I am **not going to perform any maintenance** on this codebase; I will **not accept any issues** reported here.
+This fork is just an archive of _what used to be publicly available_ before the repositories were withdrawn.
+
+---
+
 # SpecFlow - Cucumber for .NET
 
 SpecFlow is a pragmatic BDD solution for .NET. It provides test automation for .NET (.NET Framework, .NET Core and Mono), based on the Gherkin specification language and integrates to Visual Studio.
