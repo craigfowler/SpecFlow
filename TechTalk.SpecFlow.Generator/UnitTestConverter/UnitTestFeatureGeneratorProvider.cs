@@ -1,20 +1,18 @@
+using TechTalk.SpecFlow.Generator.Generation;
 using TechTalk.SpecFlow.Parser;
 
 namespace TechTalk.SpecFlow.Generator.UnitTestConverter
 {
     public class UnitTestFeatureGeneratorProvider : IFeatureGeneratorProvider
     {
-        private readonly UnitTestFeatureGenerator unitTestFeatureGenerator;
+        private readonly UnitTestFeatureGenerator _unitTestFeatureGenerator;
 
         public UnitTestFeatureGeneratorProvider(UnitTestFeatureGenerator unitTestFeatureGenerator)
         {
-            this.unitTestFeatureGenerator = unitTestFeatureGenerator;
+            _unitTestFeatureGenerator = unitTestFeatureGenerator;
         }
 
-        public int Priority
-        {
-            get { return PriorityValues.Lowest; }
-        }
+        public int Priority => PriorityValues.Lowest;
 
         public bool CanGenerate(SpecFlowDocument document)
         {
@@ -23,7 +21,7 @@ namespace TechTalk.SpecFlow.Generator.UnitTestConverter
 
         public IFeatureGenerator CreateGenerator(SpecFlowDocument document)
         {
-            return unitTestFeatureGenerator;
+            return _unitTestFeatureGenerator;
         }
     }
 }

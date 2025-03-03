@@ -1,22 +1,19 @@
 ﻿using System.Globalization;
 using System.Threading;
 using FluentAssertions;
-using NUnit.Framework;
+using Xunit;
 using TechTalk.SpecFlow.Assist.ValueComparers;
 
 namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
 {
-    [TestFixture]
     public class DecimalValueComparerTests
-	{
-		[SetUp]
-		public void TestSetup()
-		{
-			// this is required, because the tests depend on parsing decimals with the en-US culture
-			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-		}
+    {
+        public DecimalValueComparerTests()
+        {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
+        }
 
-		[Test]
+        [Fact]
         public void Can_compare_if_the_value_is_a_decimal()
         {
             var valueComparer = new DecimalValueComparer();
@@ -25,7 +22,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
             valueComparer.CanCompare(-1.24M).Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void Cannot_compare_if_the_value_is_null()
         {
             new DecimalValueComparer()
@@ -33,7 +30,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
                 .Should().BeFalse();
         }
 
-        [Test]
+        [Fact]
         public void Cannot_compare_if_the_value_is_not_a_decimal()
         {
             var valueComparer = new DecimalValueComparer();
@@ -42,7 +39,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
             valueComparer.CanCompare(3.14).Should().BeFalse();
         }
 
-        [Test]
+        [Fact]
         public void Returns_true_when_the_decimal_values_match()
         {
             var valueComparer = new DecimalValueComparer();
@@ -51,7 +48,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
             valueComparer.Compare("-1", -1M).Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void Returns_false_when_the_decimal_values_do_not_match()
         {
             var valueComparer = new DecimalValueComparer();
@@ -60,7 +57,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
             valueComparer.Compare("100.2874", 100.2873M).Should().BeFalse();
         }
 
-        [Test]
+        [Fact]
         public void Returns_false_when_the_expected_value_is_not_a_decimal()
         {
             var valueComparer = new DecimalValueComparer();

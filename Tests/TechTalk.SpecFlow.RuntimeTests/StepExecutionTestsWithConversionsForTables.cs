@@ -1,5 +1,8 @@
-using NUnit.Framework;
-using Rhino.Mocks;
+using System.Globalization;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Moq;
+using Xunit;
 using TechTalk.SpecFlow.Bindings;
 using TechTalk.SpecFlow.Bindings.Reflection;
 using TechTalk.SpecFlow.Infrastructure;
@@ -31,63 +34,59 @@ namespace TechTalk.SpecFlow.RuntimeTests
         }
     }
 
-    [TestFixture]
+    
     public class StepExecutionTestsWithConversionsForTables : StepExecutionTestsBase
     {
-        [Test]
-        public void ShouldCallTheUserConverterToConvertTableWithTable()
+        [Fact]
+        public async Task ShouldCallTheUserConverterToConvertTableWithTable()
         {
-            StepExecutionTestsBindingsForTableArgumentConvert bindingInstance;
-            TestRunner testRunner = GetTestRunnerWithConverterStub(out bindingInstance);
+            var (testRunner, bindingMock) = GetTestRunnerWithConverterStub<StepExecutionTestsBindingsForTableArgumentConvert>();
 
             Table table = new Table("h1");
             var user = new User();
 
             // return false unless its a User
-            StepArgumentTypeConverterStub.Stub(LegacyStepArgumentTypeConverterExtensions.GetCanConvertMethodFilter(table, typeof(User))).Return(true);
-            StepArgumentTypeConverterStub.Stub(c => c.CanConvert(null, null, null)).IgnoreArguments().Return(false);
-            StepArgumentTypeConverterStub.Stub(LegacyStepArgumentTypeConverterExtensions.GetConvertMethodFilter(table, typeof(User))).Return(user);
+            StepArgumentTypeConverterStub.Setup(LegacyStepArgumentTypeConverterExtensions.GetCanConvertMethodFilter(table, typeof(User))).Returns(true);
+            StepArgumentTypeConverterStub.Setup(LegacyStepArgumentTypeConverterExtensions.GetConvertAsyncMethodFilter(table, typeof(User))).ReturnsAsync(user);
 
-            bindingInstance.Expect(b => b.SingleTable(user));
-            MockRepository.ReplayAll();
+            //bindingInstance.Expect(b => b.SingleTable(user));
+            //MockRepository.ReplayAll();
 
-            testRunner.Given("sample step for argument convert with table", null, table);
+            await testRunner.GivenAsync("sample step for argument convert with table", null, table);
 
-            Assert.AreEqual(ScenarioExecutionStatus.OK, GetLastTestStatus());
-            MockRepository.VerifyAll();
+            GetLastTestStatus().Should().Be(ScenarioExecutionStatus.OK);
+            bindingMock.Verify(x => x.SingleTable(user));
         }
 
-        [Test]
-        public void ShouldCallTheUserConverterToConvertTableWithTableAndMultilineArg()
+        [Fact]
+        public async Task ShouldCallTheUserConverterToConvertTableWithTableAndMultilineArg()
         {
-            StepExecutionTestsBindingsForTableArgumentConvert bindingInstance;
-            TestRunner testRunner = GetTestRunnerWithConverterStub(out bindingInstance);
+            var (testRunner, bindingMock) = GetTestRunnerWithConverterStub<StepExecutionTestsBindingsForTableArgumentConvert>();
 
             Table table = new Table("h1");
             var user = new User();
             var multiLineArg = "multi-line arg";
             // return false unless its a User
-            StepArgumentTypeConverterStub.Stub(LegacyStepArgumentTypeConverterExtensions.GetCanConvertMethodFilter(table, typeof(User))).Return(true);            
-            StepArgumentTypeConverterStub.Stub(c => c.CanConvert(null, null, null)).IgnoreArguments().Return(false);
-            StepArgumentTypeConverterStub.Stub(LegacyStepArgumentTypeConverterExtensions.GetConvertMethodFilter(multiLineArg, typeof(string))).Return(multiLineArg);
-            StepArgumentTypeConverterStub.Stub(LegacyStepArgumentTypeConverterExtensions.GetConvertMethodFilter(table, typeof(User))).Return(user);
+            StepArgumentTypeConverterStub.Setup(LegacyStepArgumentTypeConverterExtensions.GetCanConvertMethodFilter(table, typeof(User))).Returns(true);            
+            StepArgumentTypeConverterStub.Setup(c => c.CanConvert(It.IsAny<object>(), It.IsAny<IBindingType>(), It.IsAny<CultureInfo>())).Returns(false);
+            StepArgumentTypeConverterStub.Setup(LegacyStepArgumentTypeConverterExtensions.GetConvertAsyncMethodFilter(multiLineArg, typeof(string))).ReturnsAsync(multiLineArg);
+            StepArgumentTypeConverterStub.Setup(LegacyStepArgumentTypeConverterExtensions.GetConvertAsyncMethodFilter(table, typeof(User))).ReturnsAsync(user);
             
 
             
-            bindingInstance.Expect(b => b.MultilineArgumentAndTable(multiLineArg, user));
-            MockRepository.ReplayAll();
+            //bindingInstance.Expect(b => b.MultilineArgumentAndTable(multiLineArg, user));
+            //MockRepository.ReplayAll();
 
-            testRunner.Given("sample step for argument convert with multiline argument and table", multiLineArg, table);
+            await testRunner.GivenAsync("sample step for argument convert with multiline argument and table", multiLineArg, table);
 
-            Assert.AreEqual(ScenarioExecutionStatus.OK, GetLastTestStatus());
-            MockRepository.VerifyAll();
+            GetLastTestStatus().Should().Be(ScenarioExecutionStatus.OK);
+            bindingMock.Verify(x => x.MultilineArgumentAndTable(multiLineArg, user));
         }
 
-        [Test]
-        public void ShouldCallTheUserConverterToConvertTableWithTableAndMultilineArgAndParameter()
+        [Fact]
+        public async Task ShouldCallTheUserConverterToConvertTableWithTableAndMultilineArgAndParameter()
         {
-            StepExecutionTestsBindingsForTableArgumentConvert bindingInstance;
-            TestRunner testRunner = GetTestRunnerWithConverterStub(out bindingInstance);
+            var (testRunner, bindingMock) = GetTestRunnerWithConverterStub<StepExecutionTestsBindingsForTableArgumentConvert>();
 
             Table table = new Table("h1");
             string argumentValue = "argument";
@@ -95,20 +94,20 @@ namespace TechTalk.SpecFlow.RuntimeTests
             var multiLineArg = "multi-line arg";
             // return false unless its a User
             // must also stub CanConvert & Convert for the string argument as we've introduced a parameter
-            StepArgumentTypeConverterStub.Stub(LegacyStepArgumentTypeConverterExtensions.GetCanConvertMethodFilter(table, typeof(User))).Return(true);
-            StepArgumentTypeConverterStub.Stub(c => c.CanConvert(null, null, null)).IgnoreArguments().Return(false);
-            StepArgumentTypeConverterStub.Stub(LegacyStepArgumentTypeConverterExtensions.GetConvertMethodFilter(table, typeof(User))).Return(user);
-            StepArgumentTypeConverterStub.Stub(LegacyStepArgumentTypeConverterExtensions.GetConvertMethodFilter(argumentValue, typeof(string))).Return(argumentValue);
-            StepArgumentTypeConverterStub.Stub(LegacyStepArgumentTypeConverterExtensions.GetConvertMethodFilter(multiLineArg, typeof(string))).Return(multiLineArg);
+            StepArgumentTypeConverterStub.Setup(LegacyStepArgumentTypeConverterExtensions.GetCanConvertMethodFilter(table, typeof(User))).Returns(true);
+            StepArgumentTypeConverterStub.Setup(c => c.CanConvert(It.IsAny<object>(), It.IsAny<IBindingType>(), It.IsAny<CultureInfo>())).Returns(false);
+            StepArgumentTypeConverterStub.Setup(LegacyStepArgumentTypeConverterExtensions.GetConvertAsyncMethodFilter(table, typeof(User))).ReturnsAsync(user);
+            StepArgumentTypeConverterStub.Setup(LegacyStepArgumentTypeConverterExtensions.GetConvertAsyncMethodFilter(argumentValue, typeof(string))).ReturnsAsync(argumentValue);
+            StepArgumentTypeConverterStub.Setup(LegacyStepArgumentTypeConverterExtensions.GetConvertAsyncMethodFilter(multiLineArg, typeof(string))).ReturnsAsync(multiLineArg);
 
             
-            bindingInstance.Expect(b => b.ParameterMultilineArgumentAndTable(argumentValue, multiLineArg, user));
-            MockRepository.ReplayAll();
+            //bindingInstance.Expect(b => b.ParameterMultilineArgumentAndTable(argumentValue, multiLineArg, user));
+            //MockRepository.ReplayAll();
 
-            testRunner.Given("sample step for argument convert with parameter, multiline argument and table: argument", multiLineArg, table);
+            await testRunner.GivenAsync("sample step for argument convert with parameter, multiline argument and table: argument", multiLineArg, table);
 
-            Assert.AreEqual(ScenarioExecutionStatus.OK, GetLastTestStatus());
-            MockRepository.VerifyAll();
+            GetLastTestStatus().Should().Be(ScenarioExecutionStatus.OK);
+            bindingMock.Verify(x => x.ParameterMultilineArgumentAndTable(argumentValue, multiLineArg, user));
         }
     }
 }

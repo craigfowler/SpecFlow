@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Globalization;
 using System.Threading;
-using NUnit.Framework;
+using Xunit;
 using FluentAssertions;
 using TechTalk.SpecFlow.Assist;
 using TechTalk.SpecFlow.RuntimeTests.AssistTests.TestInfrastructure;
 
 namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
 {
-    [TestFixture]
+    
     public class InstanceComparisonExtensionMethodsTests
     {
-        [SetUp]
-        public void SetUp()
+        public InstanceComparisonExtensionMethodsTests()
         {
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US", false);
         }
 
-        [Test]
+        [Fact]
         public void Throws_exception_when_value_of_matching_string_property_does_not_match()
         {
             var table = new Table("Field", "Value");
@@ -30,7 +29,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             comparisonResult.ExceptionWasThrown.Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void Does_not_throw_exception_when_value_of_matching_string_property_matches()
         {
             var table = new Table("Field", "Value");
@@ -43,7 +42,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
         public void Throws_exception_when_first_row_matches_but_second_does_not()
         {
             var table = new Table("Field", "Value");
@@ -51,17 +50,17 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             table.AddRow("IntProperty", "20");
 
             var test = new InstanceComparisonTestObject
-                           {
-                               StringProperty = "Howard Roark",
-                               IntProperty = 10
-                           };
+            {
+                StringProperty = "Howard Roark",
+                IntProperty = 10
+            };
 
             ComparisonTestResult comparisonResult = ExceptionWasThrownByThisComparison(table, test);
 
             comparisonResult.ExceptionWasThrown.Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void Should_not_throw_an_exception_when_the_ToString_values_of_each_match()
         {
             var table = new Table("Field", "Value");
@@ -81,7 +80,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
         public void Should_not_throw_an_exception_when_the_date_time_value_is_midnight_and_the_table_does_not_include_a_time()
         {
             var table = new Table("Field", "Value");
@@ -97,7 +96,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
         public void Should_not_throw_an_exception_when_actual_value_is_null_and_expected_is_empty()
         {
             var table = new Table("Field", "Value");
@@ -113,7 +112,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
         public void Exception_returns_an_exception_for_one_error_when_there_is_one_difference()
         {
             var table = new Table("Field", "Value");
@@ -125,10 +124,10 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
 
             exception.Message.AgnosticLineBreak().Should().Be(
                 @"The following fields did not match:
-StringProperty: Expected <Howard Roark>, Actual <Peter Keating>".AgnosticLineBreak());
+StringProperty: Expected <Howard Roark>, Actual <Peter Keating>, Using 'TechTalk.SpecFlow.Assist.ValueComparers.DefaultValueComparer'".AgnosticLineBreak());
         }
 
-        [Test]
+        [Fact]
         public void Exception_returns_an_exception_for_two_errors_when_there_are_two_differences()
         {
             var table = new Table("Field", "Value");
@@ -136,20 +135,20 @@ StringProperty: Expected <Howard Roark>, Actual <Peter Keating>".AgnosticLineBre
             table.AddRow("IntProperty", "1");
 
             var test = new InstanceComparisonTestObject
-                           {
-                               StringProperty = "Peter Keating",
-                               IntProperty = 2
-                           };
+            {
+                StringProperty = "Peter Keating",
+                IntProperty = 2
+            };
 
             var exception = GetExceptionThrownByThisComparison(table, test);
 
             exception.Message.AgnosticLineBreak().Should().Be(
                 @"The following fields did not match:
-StringProperty: Expected <Howard Roark>, Actual <Peter Keating>
-IntProperty: Expected <1>, Actual <2>".AgnosticLineBreak());
+StringProperty: Expected <Howard Roark>, Actual <Peter Keating>, Using 'TechTalk.SpecFlow.Assist.ValueComparers.DefaultValueComparer'
+IntProperty: Expected <1>, Actual <2>, Using 'TechTalk.SpecFlow.Assist.ValueComparers.DefaultValueComparer'".AgnosticLineBreak());
         }
 
-        [Test]
+        [Fact]
         public void Exception_returns_a_descriptive_error_when_property_in_table_does_not_exist()
         {
             var table = new Table("Field", "Value");
@@ -163,55 +162,55 @@ IntProperty: Expected <1>, Actual <2>".AgnosticLineBreak());
 IDoNotExist: Property does not exist".AgnosticLineBreak());
         }
 
-        [Test]
+        [Fact]
         public void Will_property_handle_true_boolean_matches()
         {
             var table = new Table("Field", "Value");
             table.AddRow("BoolProperty", "true");
 
             ComparisonTestResult comparisonResult = ExceptionWasThrownByThisComparison(table, new InstanceComparisonTestObject
-                                                                                                        {
-                                                                                                            BoolProperty = true
-                                                                                                        });
+            {
+                BoolProperty = true
+            });
 
             comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
 
             comparisonResult = ExceptionWasThrownByThisComparison(table, new InstanceComparisonTestObject
-                                                                                                    {
-                                                                                                        BoolProperty = false
-                                                                                                    });
+            {
+                BoolProperty = false
+            });
 
             comparisonResult.ExceptionWasThrown.Should().BeTrue(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
         public void Will_match_guids_without_case_insensitivity()
         {
             var table = new Table("Field", "Value");
             table.AddRow("GuidProperty", "DFFC3F4E-670A-400A-8212-C6841E2EA055");
 
             ComparisonTestResult comparisonResult = ExceptionWasThrownByThisComparison(table, new InstanceComparisonTestObject
-                                                                                                        {
-                                                                                                            GuidProperty = new Guid("DFFC3F4E-670A-400A-8212-C6841E2EA055")
-                                                                                                        });
+            {
+                GuidProperty = new Guid("DFFC3F4E-670A-400A-8212-C6841E2EA055")
+            });
 
             comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
         public void Will_match_decimals_regardless_of_trailing_zeroes()
         {
             var table = new Table("Field", "Value");
             table.AddRow("DecimalProperty", "4.23");
             var comparisonResult = ExceptionWasThrownByThisComparison(table, new InstanceComparisonTestObject
-                                                                                 {
-                                                                                     DecimalProperty = 4.23000000M
-                                                                                 });
+            {
+                DecimalProperty = 4.23000000M
+            });
 
             comparisonResult.ExceptionWasThrown.Should().BeFalse();
         }
 
-        [Test]
+        [Fact]
         public void Throws_exception_when_the_result_is_null()
         {
             var table = new Table("Field", "Value");
@@ -221,7 +220,7 @@ IDoNotExist: Property does not exist".AgnosticLineBreak());
             comparisonResult.ExceptionWasThrown.Should().BeTrue(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
         public void Exception_returns_a_descriptive_error_when_the_result_is_null()
         {
             var table = new Table("Field", "Value");
@@ -231,7 +230,7 @@ IDoNotExist: Property does not exist".AgnosticLineBreak());
             exception.Message.Should().Be("The item to compare was null.");
         }
 
-        [Test]
+        [Fact]
         public void Ignores_spaces_when_matching_property_name()
         {
             var table = new Table("Field", "Value");
@@ -244,7 +243,7 @@ IDoNotExist: Property does not exist".AgnosticLineBreak());
             comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
         public void Ignores_casing_when_matching_property_name()
         {
             var table = new Table("Field", "Value");
@@ -257,25 +256,43 @@ IDoNotExist: Property does not exist".AgnosticLineBreak());
             comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
+        public void Uses_property_aliases()
+        {
+            var table = new Table("AliasOne", "AliasTwo", "AliasThree");
+            table.AddRow("PropertyOneValue", "PropertyTwoValue", "PropertyThreeValue");
+
+            var test = new AliasedTestObject
+            {
+                PropertyOne = "PropertyOneValue",
+                PropertyTwo = "PropertyTwoValue",
+                PropertyThree = "PropertyThreeValue"
+            };
+
+            var comparisonResult = ExceptionWasThrownByThisComparison(table, test);
+
+            comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
+        }
+
+        [Fact]
         public void Can_compare_a_horizontal_table()
         {
             var table = new Table("StringProperty", "IntProperty", "DecimalProperty", "FloatProperty");
             table.AddRow("Test", "42", "23.01", "11.56");
 
             var test = new InstanceComparisonTestObject
-                           {
-                               StringProperty = "Test",
-                               IntProperty = 42,
-                               DecimalProperty = 23.01M,
-                               FloatProperty = 11.56F
-                           };
+            {
+                StringProperty = "Test",
+                IntProperty = 42,
+                DecimalProperty = 23.01M,
+                FloatProperty = 11.56F
+            };
 
             var comparisonResult = ExceptionWasThrownByThisComparison(table, test);
             comparisonResult.ExceptionWasThrown.Should().BeFalse(comparisonResult.ExceptionMessage);
         }
 
-        [Test]
+        [Fact]
         public void Supports_all_standard_types()
         {
             var table = new Table(
@@ -369,7 +386,7 @@ IDoNotExist: Property does not exist".AgnosticLineBreak());
             return null;
         }
 
-        private static ComparisonTestResult ExceptionWasThrownByThisComparison(Table table, InstanceComparisonTestObject test)
+        private static ComparisonTestResult ExceptionWasThrownByThisComparison<T>(Table table, T test)
         {
             var result = new ComparisonTestResult { ExceptionWasThrown = false };
             try

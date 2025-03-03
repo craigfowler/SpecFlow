@@ -1,23 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Gherkin.Ast;
+﻿using Gherkin.Ast;
 
 namespace TechTalk.SpecFlow.Parser
 {
     public class SpecFlowDocument : GherkinDocument
     {
-        public SpecFlowDocument(SpecFlowFeature feature, Comment[] comments, string sourceFilePath) : base(feature, comments)
+        public SpecFlowDocument(SpecFlowFeature feature, Comment[] comments, SpecFlowDocumentLocation documentLocation) : base(feature, comments)
         {
-            this.SourceFilePath = sourceFilePath;
-
+            DocumentLocation = documentLocation;
         }
 
         public SpecFlowFeature SpecFlowFeature => (SpecFlowFeature) Feature;
 
-        public string SourceFilePath { get; private set; }
+        public SpecFlowDocumentLocation DocumentLocation { get; private set; }
 
+        public string SourceFilePath => DocumentLocation?.SourceFilePath;
     }
 }

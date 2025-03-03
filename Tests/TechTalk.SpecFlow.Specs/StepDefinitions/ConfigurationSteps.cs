@@ -1,29 +1,35 @@
-﻿using FluentAssertions;
-using TechTalk.SpecFlow.Specs.Drivers;
+﻿using TechTalk.SpecFlow.TestProjectGenerator.Driver;
 
 namespace TechTalk.SpecFlow.Specs.StepDefinitions
 {
     [Binding]
-    class ConfigurationSteps
+    public class ConfigurationSteps
     {
-        private readonly TestExecutionResult _testExecutionResult;
+        private readonly ConfigurationDriver _configurationDriver;
+        private readonly CompilationResultDriver _compilationResultDriver;
 
-        public ConfigurationSteps(TestExecutionResult testExecutionResult)
+        public ConfigurationSteps(ConfigurationDriver configurationDriver, CompilationResultDriver compilationResultDriver)
         {
-            _testExecutionResult = testExecutionResult;
+            _configurationDriver = configurationDriver;
+            _compilationResultDriver = compilationResultDriver;
         }
 
         [Then(@"the app\.config is used for configuration")]
         public void ThenTheApp_ConfigIsUsedForConfiguration()
         {
-            _testExecutionResult.ExecutionLog.Should().Contain("Using app.config");
+            _compilationResultDriver.CheckSolutionShouldUseAppConfig();
         }
 
         [Then(@"the specflow\.json is used for configuration")]
-        public void ThenTheSpecflow_JsonIsUsedForConfiguration()
+        public void ThenTheSpecFlow_JsonIsUsedForConfiguration()
         {
-            _testExecutionResult.ExecutionLog.Should().Contain("Using specflow.json");
+            _compilationResultDriver.CheckSolutionShouldUseSpecFlowJson();
         }
 
+        [Given(@"the feature language is '(.*)'")]
+        public void GivenTheFeatureLanguageIs(string featureLanguage)
+        {
+            _configurationDriver.SetFeatureLanguage(featureLanguage);
+        }
     }
 }

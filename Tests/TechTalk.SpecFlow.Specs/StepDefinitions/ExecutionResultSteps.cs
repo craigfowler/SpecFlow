@@ -1,133 +1,121 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using FluentAssertions;
-using TechTalk.SpecFlow.Specs.Drivers;
 using TechTalk.SpecFlow.Assist;
+using TechTalk.SpecFlow.TestProjectGenerator;
+using TechTalk.SpecFlow.TestProjectGenerator.Driver;
+using TechTalk.SpecFlow.TestProjectGenerator.Helpers;
 
 namespace TechTalk.SpecFlow.Specs.StepDefinitions
 {
     [Binding]
     public class ExecutionResultSteps
-    { 
-        private readonly TestExecutionResult testExecutionResult;
-        private readonly HooksDriver hooksDriver;
+    {
+        private readonly HooksDriver _hooksDriver;
+        private readonly VSTestExecutionDriver _vsTestExecutionDriver;
+        private readonly TestProjectFolders _testProjectFolders;
+        private readonly TestRunLogDriver _testRunLogDriver;
 
-        public ExecutionResultSteps(TestExecutionResult testExecutionResult, HooksDriver hooksDriver)
+        public ExecutionResultSteps(HooksDriver hooksDriver, VSTestExecutionDriver vsTestExecutionDriver, TestProjectFolders testProjectFolders, TestRunLogDriver testRunLogDriver)
         {
-            this.testExecutionResult = testExecutionResult;
-            this.hooksDriver = hooksDriver;
+            _hooksDriver = hooksDriver;
+            _vsTestExecutionDriver = vsTestExecutionDriver;
+            _testProjectFolders = testProjectFolders;
+            _testRunLogDriver = testRunLogDriver;
         }
 
-        public TestRunSummary ConvertToSummary(Table table)
-        {
-            return table.CreateInstance<TestRunSummary>();
-        }
-
+        [Then(@"the tests were executed successfully")]
         [Then(@"all tests should pass")]
         [Then(@"the scenario should pass")]
         public void ThenAllTestsShouldPass()
         {
-            testExecutionResult.LastExecutionSummary.Should().NotBeNull();
-            testExecutionResult.LastExecutionSummary.Succeeded.Should().Be(testExecutionResult.LastExecutionSummary.Total);
+            _vsTestExecutionDriver.LastTestExecutionResult.Should().NotBeNull();
+            _vsTestExecutionDriver.LastTestExecutionResult.Succeeded.Should().Be(_vsTestExecutionDriver.LastTestExecutionResult.Total);
         }
 
         [Then(@"the execution summary should contain")]
-        public void ThenTheExecutionSummaryShouldContain(Table expectedSummary)
+        public void ThenTheExecutionSummaryShouldContain(Table expectedTestExecutionResult)
         {
-            testExecutionResult.LastExecutionSummary.Should().NotBeNull();
-            expectedSummary.CompareToInstance(testExecutionResult.LastExecutionSummary);
+            _vsTestExecutionDriver.LastTestExecutionResult.Should().NotBeNull();
+            expectedTestExecutionResult.CompareToInstance(_vsTestExecutionDriver.LastTestExecutionResult);
         }
 
         [Then(@"the binding method '(.*)' is executed")]
         public void ThenTheBindingMethodIsExecuted(string methodName)
         {
-            ThenTheBindingMethodIsExecuted(methodName, int.MaxValue);
+            ThenTheBindingMethodIsExecuted(methodName, 1);
         }
 
         [Then(@"the binding method '(.*)' is executed (.*)")]
         public void ThenTheBindingMethodIsExecuted(string methodName, int times)
         {
-            testExecutionResult.ExecutionLog.Should().NotBeNull("no execution log generated");
-
-            var regex = new Regex(@"-> done: \S+\." + methodName);
-            if (times > 0)
-                regex.Match(testExecutionResult.ExecutionLog).Success.Should().BeTrue("method " + methodName + " was not executed.");
-
-            if (times != int.MaxValue)
-                regex.Matches(testExecutionResult.ExecutionLog).Count.Should().Be(times);
+            _vsTestExecutionDriver.CheckIsBindingMethodExecuted(methodName, times);
         }
 
         [Then(@"the hook '(.*)' is executed (\D.*)")]
         [Then(@"the hook '(.*)' is executed (\d+) times")]
         public void ThenTheHookIsExecuted(string methodName, int times)
         {
-            var hookLog = hooksDriver.HookLog;
-            hookLog.Should().NotBeNullOrEmpty("no execution log generated");
-
-            var regex = new Regex(@"-> hook: " + methodName);
-            if (times > 0)
-                regex.Match(hookLog).Success.Should().BeTrue("method " + methodName + " was not executed.");
-
-            if (times != int.MaxValue)
-                regex.Matches(hookLog).Count.Should().Be(times);
+            _hooksDriver.CheckIsHookExecuted(methodName, times);
         }
 
         [Then(@"the hooks are executed in the order")]
         public void ThenTheHooksAreExecutedInTheOrder(Table table)
         {
-            var hookLog = hooksDriver.HookLog;
-            hookLog.Should().NotBeNullOrEmpty("no execution log generated");
-            int lastPosition = -1;
-            foreach (var row in table.Rows)
-            {
-                int currentPosition = hookLog.IndexOf(@"-> hook: " + row[0]);
-                currentPosition.Should().BeGreaterThan(lastPosition);
-                lastPosition = currentPosition;
-            }
+            _hooksDriver.CheckIsHookExecutedInOrder(table.Rows.Select(r => r[0]));
         }
 
         [Then(@"the execution log should contain text '(.*)'")]
         public void ThenTheExecutionLogShouldContainText(string text)
         {
-            testExecutionResult.ExecutionLog.Should().NotBeNull("no execution log generated");
-            testExecutionResult.ExecutionLog.Should().Contain(text);
+            _vsTestExecutionDriver.CheckAnyOutputContainsText(text);
         }
 
-        [Given(@"the log file '(.*)' is empty")]
-        public void GivenTheLogFileIsEmpty(string logFilePath)
+        [Then(@"the execution log should contain text")]
+        public void ThenTheExecutionLogShouldContainMultilineText(string multilineText)
         {
-            File.WriteAllText(GetPath(logFilePath), "");
+            _vsTestExecutionDriver.CheckAnyOutputContainsText(multilineText);
+        }
+
+        [Then(@"the output should contain text '(.*)'")]
+        public void ThenTheOutputShouldContainText(string text)
+        {
+            _vsTestExecutionDriver.CheckOutputContainsText(text);
+        }
+        
+        [Then(@"the log file '(.*)' should contain text '(.*)'")]
+        public void ThenTheLogFileShouldContainText(string logFilePath, string text)
+        {
+            _testRunLogDriver.CheckLogContainsText(text, logFilePath);
+        }
+
+        [Then(@"the log file '(.*)' should contain the text '(.*)' (\d+) times")]
+        public void ThenTheLogFileShouldContainTheTextTimes(string logFilePath, string regexString, int times)
+        {
+            _testRunLogDriver.CheckLogMatchesRegexTimes(regexString, times, logFilePath);
         }
 
         private string GetPath(string logFilePath)
         {
-            string filePath = Path.Combine(Path.GetTempPath(), logFilePath);
+            string filePath = Path.Combine(_testProjectFolders.ProjectFolder, logFilePath);
             return filePath;
         }
 
-        [Then(@"the log file '(.*)' should contain text '(.*)'")]
-        public void ThenTheLogFileShouldContainText(string logFilePath, string text)
+        [Then(@"every scenario has it's individual context id")]
+        public void ThenEveryScenarioHasItSIndividualContextId()
         {
-            var logContent = File.ReadAllText(GetPath(logFilePath));
-            logContent.Should().Contain(text);
-        }
+            var lastTestExecutionResult = _vsTestExecutionDriver.LastTestExecutionResult;
 
-        [Then(@"the log file '(.*)' should contain the text '(.*)' (\d+) times")]
-        public void ThenTheLogFileShouldContainTHETextTimes(string logFilePath, string text, int times)
-        {
-            var logConent = File.ReadAllText(GetPath(logFilePath));
-            logConent.Should().NotBeNullOrEmpty("no trace log is generated");
+            foreach (var testResult in lastTestExecutionResult.TestResults)
+            {
+                var contextIdLines = testResult.StdOut.Split(new string[] { Environment.NewLine, "\n" }, StringSplitOptions.RemoveEmptyEntries).Where(s => s.StartsWith("-> Context ID"));
 
-            var regex = new Regex(text, RegexOptions.Multiline);
-            if (times > 0)
-                regex.Match(logConent).Success.Should().BeTrue(text + " was not found in the logs");
+                var distinctContextIdLines = contextIdLines.Distinct();
 
-            if (times != int.MaxValue) 
-                 regex.Matches(logConent).Count.Should().Be(times);
+                distinctContextIdLines.Count().Should().Be(1);
+            }
         }
     }
 }

@@ -1,248 +1,99 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\packages\NUnit3TestAdapter.3.9.0\build\net35\NUnit3TestAdapter.props" Condition="Exists('..\..\packages\NUnit3TestAdapter.3.9.0\build\net35\NUnit3TestAdapter.props')" />
+﻿<Project>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="../../SpecFlow.Tools.MsBuild.Generation/build/SpecFlow.Tools.MsBuild.Generation.props" />
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{ADED3F39-1742-42E2-A55A-3043AC84BDAD}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TechTalk.SpecFlow.Specs</RootNamespace>
+    <TargetFrameworks>$(SpecFlow_Specs_TFM)</TargetFrameworks>
     <AssemblyName>TechTalk.SpecFlow.Specs</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>$(SpecFlow_KeyFile)</AssemblyOriginatorKeyFile>
+    <SignAssembly>false</SignAssembly>
+    <PublicSign>$(SpecFlow_PublicSign)</PublicSign>
+    <PackageId>TechTalk.SpecFlow.Specs</PackageId>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <Configurations>Debug;Release;Debug-XUnit;Debug-MSTest;Debug-NUnit</Configurations>
+    <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
+    <SpecFlow_DeleteCodeBehindFilesOnCleanRebuild>true</SpecFlow_DeleteCodeBehindFilesOnCleanRebuild>
     <RunPostBuildEvent>Always</RunPostBuildEvent>
+
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FluentAssertions, Version=4.19.0.0, Culture=neutral, PublicKeyToken=33f2691a05b67b6a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\FluentAssertions.4.19.0\lib\net45\FluentAssertions.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="FluentAssertions.Core, Version=4.19.0.0, Culture=neutral, PublicKeyToken=33f2691a05b67b6a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\FluentAssertions.4.19.0\lib\net45\FluentAssertions.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Gherkin, Version=5.0.0.0, Culture=neutral, PublicKeyToken=86496cfa5b4a5851, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Gherkin.5.0.0\lib\net45\Gherkin.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build" />
-    <Reference Include="Microsoft.Build.Framework" />
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework, Version=3.2.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NUnit.3.2.1\lib\net45\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="nunit3-console">
-      <HintPath>..\..\packages\NUnit.ConsoleRunner.3.2.1\tools\nunit3-console.exe</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="xunit">
-      <HintPath>..\..\packages\xunit.1.9.2\lib\net20\xunit.dll</HintPath>
-    </Reference>
-    <Reference Include="xunit.extensions">
-      <HintPath>..\..\packages\xunit.extensions.1.9.2\lib\net20\xunit.extensions.dll</HintPath>
-    </Reference>
+    <Compile Remove=".\TestFiles\**\*" />
+
+    <EmbeddedResource Include=".\Drivers\Templates\**\*" />
+    <EmbeddedResource Include=".\TestFiles\**\*" />
+    
+    <None Include="App.config" />
+
+    <Compile Remove="NuGetPackageVersion.template.cs" />
+    <None Include="NuGetPackageVersion.template.cs" />
+    <SpecFlowFeatureFiles Remove="TestFiles/**/*.feature" />
   </ItemGroup>
+   
   <ItemGroup>
-    <Compile Include="Drivers\AssemblyFolderHelper.cs" />
-    <Compile Include="Drivers\BindingClassInput.cs" />
-    <Compile Include="StepDefinitions\ConfigurationSteps.cs" />
-    <Compile Include="Drivers\ContentFileInput.cs" />
-    <Compile Include="Drivers\HooksDriver.cs" />
-    <Compile Include="Drivers\MsTestTestExecutionDriver.cs" />
-    <Compile Include="Drivers\FeatureFileInput.cs" />
-    <Compile Include="Drivers\FileInput.cs" />
-    <Compile Include="Drivers\InputProjectDriver.cs" />
-    <Compile Include="Drivers\MsBuild\ProjectCompiler.cs" />
-    <Compile Include="Drivers\MsBuild\ProjectGenerator.cs" />
-    <Compile Include="Drivers\NUnit2TestExecutionDriver.cs" />
-    <Compile Include="Drivers\NUnit3InProcessTestExecutionDriver.cs" />
-    <Compile Include="Drivers\NUnit3TestExecutionDriverBase.cs" />
-    <Compile Include="Drivers\NUnit3TestExecutionDriver.cs" />
-    <Compile Include="Drivers\NUnitTestExecutionDriverBase.cs" />
-    <Compile Include="Drivers\Parser\ParserDriver.cs" />
-    <Compile Include="Drivers\Parser\Utf8StringWriter.cs" />
-    <Compile Include="Drivers\ProcessHelper.cs" />
-    <Compile Include="Drivers\AppConfigConfigurationDriver.cs" />
-    <Compile Include="Drivers\SpecFlowJsonConfigurationDriver.cs" />
-    <Compile Include="Drivers\StepBindingInput.cs" />
-    <Compile Include="StepDefinitions\TestSettingsFileSteps.cs" />
-    <EmbeddedResource Include="Drivers\Templates\BindingClass.cs" />
-    <EmbeddedResource Include="Drivers\Templates\BindingClass.fs" />
-    <EmbeddedResource Include="Drivers\Templates\Bindings.fs" />
-    <Compile Include="Drivers\TestSettingsFileInput.cs" />
-    <Compile Include="Drivers\XUnitTestExecutionDriver.cs" />
-    <Compile Include="StepDefinitions\BeforeScenarioHooks.cs" />
-    <Compile Include="StepDefinitions\ContentFileSteps.cs" />
-    <Compile Include="StepDefinitions\ExternalLibrarySteps.cs" />
-    <Compile Include="StepDefinitions\GherkinParserSteps.cs" />
-    <Compile Include="StepDefinitions\ProjectSteps.cs" />
-    <Compile Include="Drivers\ReportInfo.cs" />
-    <Compile Include="StepDefinitions\ReportingSteps.cs" />
-    <Compile Include="StepDefinitions\SpecFlowConfigurationSteps.cs" />
-    <Compile Include="StepDefinitions\StepArgumentTransformations.cs" />
-    <EmbeddedResource Include="Drivers\Templates\Bindings.cs" />
-    <Compile Include="Drivers\Templates\TemplateManager.cs" />
-    <Compile Include="Drivers\TestExecutionResult.cs" />
-    <Compile Include="Drivers\TestRunSummary.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StepDefinitions\BindingSteps.cs" />
-    <Compile Include="StepDefinitions\ExecutionResultSteps.cs" />
-    <Compile Include="StepDefinitions\ExecutionSteps.cs" />
-    <Compile Include="StepDefinitions\FeatureFileSteps.cs" />
+    <ProjectReference Include="..\..\ExternalRepositories\SpecFlow.TestProjectGenerator\SpecFlow.TestProjectGenerator\TechTalk.SpecFlow.TestProjectGenerator.csproj" />
+    <ProjectReference Include="..\..\Plugins\TechTalk.SpecFlow.xUnit.SpecFlowPlugin\TechTalk.SpecFlow.xUnit.SpecFlowPlugin.csproj" />
+    <ProjectReference Include="..\TechTalk.SpecFlow.Specs.Generator.SpecFlowPlugin\TechTalk.SpecFlow.Specs.Generator.SpecFlowPlugin.csproj" />
+    <ProjectReference Include="..\..\TechTalk.SpecFlow.Parser\TechTalk.SpecFlow.Parser.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Include="..\PostBuild.bat">
-      <Link>PostBuild.bat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="App.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <EmbeddedResource Include="Drivers\Templates\App.config" />
-    <None Include="Features\AcessingContexts.feature" />
-    <None Include="Features\AsyncSupport.feature" />
-    <None Include="Features\BasicExecution.feature" />
-    <None Include="Features\BindingCulture.feature" />
-    <None Include="Features\CallingStepsFromStepDefinition.feature" />
-    <None Include="Features\Configuration.feature" />
-    <None Include="Features\ContextInjection.feature" />
-    <None Include="Features\Description.feature" />
-    <None Include="Features\ExternalSteps.feature" />
-    <None Include="Features\InAppDomainParallelExecution.feature" />
-    <None Include="Features\InjectoContextToHooks.feature" />
-    <None Include="Features\LanguageSupport.feature" />
-    <None Include="Features\Parser\DescriptionParser.feature" />
-    <None Include="Features\Reports\StepDefinitionReport.feature" />
-    <None Include="Features\ScopedHooks.feature" />
-    <None Include="Features\XUnit2Provider.feature" />
-    <None Include="Features\XUnitProvider.feature" />
-    <None Include="Features\OrderedHookSupport.feature" />
-    <None Include="Features\HookSupport.feature" />
-    <None Include="Features\NUnitProvider.feature" />
-    <None Include="Features\MsTestProvider.feature" />
-    <None Include="Features\Parser\ParsingErrors.feature" />
-    <None Include="Features\Reports\CustomXsltTemplate.feature" />
-    <None Include="Features\Reports\ExecutionReport.feature" />
-    <None Include="Features\ScopedSteps.feature" />
-    <None Include="Features\StepArguments.feature" />
-    <None Include="Features\StepArgumentTransformations.feature" />
-    <None Include="Features\StepDefinitionsWithoutRegex.feature" />
-    <None Include="Features\TaggedExamples.feature" />
-    <None Include="packages.config" />
+    <PackageReference Include="MSBuild.AdditionalTasks" Version="*" />
+    <PackageReference Include="Gherkin" Version="19.0.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
+    <PackageReference Include="FluentAssertions" Version="6.7.0" />
+    <PackageReference Include="Moq" Version="4.17.2" />
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.console" Version="2.4.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Installer\SpecFlowBinPackage\SpecFlowBinPackage.csproj">
-      <Project>{27B6695E-7049-4C1B-8820-812722128D9E}</Project>
-      <Name>SpecFlowBinPackage</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\SpecFlow.TestGenerator\SpecFlow.TestProjectGenerator\SpecFlow.TestProjectGenerator.csproj">
-      <Project>{fa04b445-d04c-4075-9eb0-4d0a70e47fc4}</Project>
-      <Name>SpecFlow.TestProjectGenerator</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\TechTalk.SpecFlow.Parser.Compatibility\TechTalk.SpecFlow.Parser.Compatibility.csproj">
-      <Project>{b4588e81-c589-434f-8f12-3d881433c3e4}</Project>
-      <Name>TechTalk.SpecFlow.Parser.Compatibility</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\TechTalk.SpecFlow.Parser\TechTalk.SpecFlow.Parser.csproj">
-      <Project>{7CCEF6D6-FC17-422E-9BED-EDD752B6496F}</Project>
-      <Name>TechTalk.SpecFlow.Parser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\TechTalk.SpecFlow.Reporting\TechTalk.SpecFlow.Reporting.csproj">
-      <Project>{FC43509F-E7D3-40C4-B4C3-1E6C9D5530A4}</Project>
-      <Name>TechTalk.SpecFlow.Reporting</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\TechTalk.SpecFlow\TechTalk.SpecFlow.csproj">
-      <Project>{413ee28c-4f89-4c6f-ba1e-2cdee4cd43b4}</Project>
-      <Name>TechTalk.SpecFlow</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Drivers\Templates\TestProjectFile.fsproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Drivers\Templates\TestProjectFile.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Drivers\Templates\TestProjectFile.vbproj">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Drivers\Templates\BindingClass.vb" />
-    <EmbeddedResource Include="Drivers\Templates\Bindings.vb" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
   <PropertyGroup>
-    <SpecFlowTasksPath>..\..\TechTalk.SpecFlow.Tools\$(OutDir)\specflow.exe</SpecFlowTasksPath>
+    <_SpecFlow_Needed_MSBuildGenerator Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(SpecFlow_Core_Generator_TFM)</_SpecFlow_Needed_MSBuildGenerator>
+    <_SpecFlow_Needed_MSBuildGenerator Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(SpecFlow_FullFramework_Generator_TFM)</_SpecFlow_Needed_MSBuildGenerator>
   </PropertyGroup>
-  <Import Project="..\..\TechTalk.SpecFlow.Tools\MsBuild\TechTalk.SpecFlow.tasks" />
-  <Import Project="..\..\TechTalk.SpecFlow.Tools\MsBuild\TechTalk.SpecFlow.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>$(SolutionDir)\Tests\PostBuild.bat "$(TargetDir)" "$(SolutionDir)"</PostBuildEvent>
-  </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
-  <Target Name="AfterUpdateFeatureFilesInProject">
-    <Move SourceFiles="@(SpecFlowGeneratedFiles)" DestinationFolder="Features.Generated" OverwriteReadOnlyFiles="true" />
+
+
+
+  <Target Name="WriteNuGetVersion" AfterTargets="GetBuildVersion" BeforeTargets="BeforeCompile" Condition="$(DesignTimeBuild) != 'true' OR '$(BuildingProject)' == 'true'">
+    <ReplaceTextInFileTask InputFile="$(ProjectDir)\\NuGetPackageVersion.template.cs" OutputFile="$(ProjectDir)\\NuGetPackageVersion.cs" TextToReplace="NUGET_VERSION" TextToReplaceWith="$(NuGetPackageVersion)" WriteOnlyWhenChanged="true" />
+
     <ItemGroup>
-      <!-- include the generated test classes to be compiled -->
-      <Compile Include="Features.Generated\**\*.cs">
-        <Visible>true</Visible>
-        <!-- the generated files can be hidden in Visual Studio -->
-      </Compile>
+      <Compile Include="$(ProjectDir)\\NuGetPackageVersion.cs" />
     </ItemGroup>
   </Target>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\NUnit3TestAdapter.3.9.0\build\net35\NUnit3TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\NUnit3TestAdapter.3.9.0\build\net35\NUnit3TestAdapter.props'))" />
-    <Error Condition="!Exists('..\..\packages\GitVersionTask.4.0.0-beta0012\build\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\GitVersionTask.4.0.0-beta0012\build\GitVersionTask.targets'))" />
+
+  <Target Name="PreBuild">
+    <MSBuild Projects="..\..\SpecFlow.Tools.MsBuild.Generation\SpecFlow.Tools.MsBuild.Generation.csproj" ContinueOnError="false" Properties="TargetFramework=$(_SpecFlow_Needed_MSBuildGenerator)" />
+    <MSBuild Projects="..\TechTalk.SpecFlow.Specs.Generator.SpecFlowPlugin\TechTalk.SpecFlow.Specs.Generator.SpecFlowPlugin.csproj" ContinueOnError="false" Properties="TargetFramework=$(_SpecFlow_Needed_MSBuildGenerator)" />
   </Target>
-  <Import Project="..\..\packages\GitVersionTask.4.0.0-beta0012\build\GitVersionTask.targets" Condition="Exists('..\..\packages\GitVersionTask.4.0.0-beta0012\build\GitVersionTask.targets')" />
+
+  <ItemGroup>
+    <SpecFlowGeneratorPlugins Include="$(MSBuildThisFileDirectory)..\TechTalk.SpecFlow.Specs.Generator.SpecFlowPlugin\bin\$(Configuration)\$(_SpecFlow_Needed_MSBuildGenerator)\TechTalk.SpecFlow.Specs.Generator.SpecFlowPlugin.dll" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <_SpecFlow_TaskAssembly>..\..\SpecFlow.Tools.MsBuild.Generation\bin\$(Configuration)\$(_SpecFlow_Needed_MSBuildGenerator)\SpecFlow.Tools.MsBuild.Generation.dll</_SpecFlow_TaskAssembly>
+  </PropertyGroup>
+
+  <Import Project="..\..\SpecFlow.Tools.MsBuild.Generation\build\SpecFlow.Tools.MsBuild.Generation.targets" /> <!-- has to be before the PropertyGroup change-->
+  <PropertyGroup>
+    <BuildDependsOn>
+      PreBuild;
+      $(BuildDependsOn)
+    </BuildDependsOn>
+    <RebuildDependsOn>
+      PreBuild;
+      $(RebuildDependsOn)
+    </RebuildDependsOn>
+  </PropertyGroup>
+
 </Project>

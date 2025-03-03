@@ -2,29 +2,28 @@
 using System.Globalization;
 using System.Linq;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using TechTalk.SpecFlow.BindingSkeletons;
 using TechTalk.SpecFlow.Bindings;
 using FluentAssertions;
 
 namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
 {
-    [TestFixture]
+    
     public class StepDefinitionSkeletonProviderTests
     {
         private Mock<ISkeletonTemplateProvider> templateProviderMock;
         private Mock<IStepTextAnalyzer> stepTextAnalyzerMock;
         private AnalyzedStepText analizeResult;
-        private readonly CultureInfo bindingCulture = new CultureInfo("en-US");
+        private readonly CultureInfo bindingCulture = new CultureInfo("en-US", false);
 
-        [SetUp]
-        public void Setup()
+        public StepDefinitionSkeletonProviderTests()
         {
             templateProviderMock = new Mock<ISkeletonTemplateProvider>();
             templateProviderMock.Setup(tp => tp.GetStepDefinitionClassTemplate(It.IsAny<ProgrammingLanguage>()))
                 .Returns("{namespace}/{className}/{bindings}");
             templateProviderMock.Setup(tp => tp.GetStepDefinitionTemplate(It.IsAny<ProgrammingLanguage>(), true))
-                .Returns("{attribute}/{regex}/{methodName}/{parameters}");
+                .Returns("{attribute}/{expression}/{methodName}/{parameters}");
             templateProviderMock.Setup(tp => tp.GetStepDefinitionTemplate(It.IsAny<ProgrammingLanguage>(), false))
                 .Returns("{attribute}/{methodName}/{parameters}");
 
@@ -36,21 +35,21 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
 
         private StepInstance CreateSimpleWhen(string text = "I do something")
         {
-            var result = new StepInstance(StepDefinitionType.When, StepDefinitionKeyword.When, "When ", text, null, null, new StepContext("MyFeature", "MyScenario", null, new CultureInfo("en-US")));
+            var result = new StepInstance(StepDefinitionType.When, StepDefinitionKeyword.When, "When ", text, null, null, new StepContext("MyFeature", "MyScenario", null, new CultureInfo("en-US", false)));
             analizeResult.TextParts.Add(text);
             return result;
         }
 
         private StepInstance CreateSimpleGiven(string text = "I had something")
         {
-            var result = new StepInstance(StepDefinitionType.Given, StepDefinitionKeyword.Given, "Given ", text, null, null, new StepContext("MyFeature", "MyScenario", null, new CultureInfo("en-US")));
+            var result = new StepInstance(StepDefinitionType.Given, StepDefinitionKeyword.Given, "Given ", text, null, null, new StepContext("MyFeature", "MyScenario", null, new CultureInfo("en-US", false)));
             analizeResult.TextParts.Add(text);
             return result;
         }
 
         private StepInstance CreateSimpleThen(string text = "I have something")
         {
-            var result = new StepInstance(StepDefinitionType.Then, StepDefinitionKeyword.Then, "Then ", text, null, null, new StepContext("MyFeature", "MyScenario", null, new CultureInfo("en-US")));
+            var result = new StepInstance(StepDefinitionType.Then, StepDefinitionKeyword.Then, "Then ", text, null, null, new StepContext("MyFeature", "MyScenario", null, new CultureInfo("en-US", false)));
             analizeResult.TextParts.Add(text);
             return result;
         }
@@ -99,7 +98,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
             return new StepDefinitionSkeletonProvider(templateProviderMock.Object, stepTextAnalyzerMock.Object);
         }
 
-        [Test]
+        [Fact]
         public void Should_GetBindingClassSkeleton_generate_empty_step_definition_class()
         {
             var sut = CreateSut();
@@ -109,7 +108,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
             result.Should().Be("MyName.Space/MyClass/");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetBindingClassSkeleton_generate_single_step_definition_class()
         {
             var sut = new StepDefinitionSkeletonProviderStepDefinitionSkeletonStub(templateProviderMock.Object, stepTextAnalyzerMock.Object, "step-definition-skeleton");
@@ -119,7 +118,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
             result.Should().Be("MyName.Space/MyClass/        step-definition-skeleton");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetBindingClassSkeleton_merges_same_step_definition_methods()
         {
             var sut = new StepDefinitionSkeletonProviderStepDefinitionSkeletonStub(templateProviderMock.Object, stepTextAnalyzerMock.Object, "step-definition-skeleton", "other-step-definition-skeleton", "step-definition-skeleton");
@@ -130,7 +129,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
         other-step-definition-skeleton"));
         }
 
-        [Test]
+        [Fact]
         public void Should_GetBindingClassSkeleton_orders_step_definition_methods_by_type()
         {
             var sut = new StepDefinitionSkeletonProviderStepDefinitionSkeletonStub(templateProviderMock.Object, stepTextAnalyzerMock.Object, si => si.StepDefinitionType.ToString() + "-skeleton");
@@ -142,7 +141,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
         Then-skeleton"));
         }
 
-        [Test]
+        [Fact]
         public void Should_GetBindingClassSkeleton_indent_step_definition_class()
         {
             var sut = new StepDefinitionSkeletonProviderStepDefinitionSkeletonStub(templateProviderMock.Object, stepTextAnalyzerMock.Object, StringHelpers.ConsolidateVerbatimStringLineEndings(@"step-definition-skeleton
@@ -155,47 +154,47 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
             inner-line"));
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_simple_regex_style()
         {
             var sut = CreateSut();
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.CSharp, CreateSimpleWhen(), StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I do something/WhenIDoSomething/");
+            result.Should().Be("When/@\"^I do something$\"/WhenIDoSomething/");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_regex_style_with_extra_args_csharp()
         {
             var sut = CreateSut();
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.CSharp, CreateWhenWithExtraArgs(), StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I do something/WhenIDoSomething/string multilineText, Table table");
+            result.Should().Be("When/@\"^I do something$\"/WhenIDoSomething/string multilineText, Table table");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_regex_style_with_extra_args_fsharp()
         {
             var sut = CreateSut();
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.FSharp, CreateWhenWithExtraArgs(), StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I do something/WhenIDoSomething/multilineText : string, table : Table");
+            result.Should().Be("When/@\"^I do something$\"/WhenIDoSomething/multilineText : string, table : Table");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_regex_style_with_extra_args_vb()
         {
             var sut = CreateSut();
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.VB, CreateWhenWithExtraArgs(), StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I do something/WhenIDoSomething/ByVal multilineText As String, ByVal table As Table");
+            result.Should().Be("When/\"^I do something$\"/WhenIDoSomething/ByVal multilineText As String, ByVal table As Table");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_exclude_parameter_from_method_name_regex_style()
         {
             var sut = CreateSut();
@@ -204,10 +203,10 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.CSharp, stepInstance, StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I '(.*)' something/WhenISomething/string p0");
+            result.Should().Be("When/@\"^I '(.*)' something$\"/WhenISomething/string p0");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_should_escape_csharp_keywords()
         {
             var sut = CreateSut();
@@ -216,10 +215,10 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.CSharp, stepInstance, StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I '(.*)' something/WhenISomething/string @do");
+            result.Should().Be("When/@\"^I '(.*)' something$\"/WhenISomething/string @do");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_should_not_escape_csharp_keywords_when_cased_differently()
         {
             var sut = CreateSut();
@@ -228,10 +227,10 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.CSharp, stepInstance, StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I '(.*)' something/WhenISomething/string fLoaT");
+            result.Should().Be("When/@\"^I '(.*)' something$\"/WhenISomething/string fLoaT");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_should_escape_vb_keywords()
         {
             var sut = CreateSut();
@@ -240,10 +239,10 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.VB, stepInstance, StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I '(.*)' something/WhenISomething/ByVal [do] As String");
+            result.Should().Be("When/\"^I '(.*)' something$\"/WhenISomething/ByVal [do] As String");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_should_escape_vb_keywords_regardless_of_case()
         {
             var sut = CreateSut();
@@ -252,10 +251,10 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.VB, stepInstance, StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I '(.*)' something/WhenISomething/ByVal [Do] As String");
+            result.Should().Be("When/\"^I '(.*)' something$\"/WhenISomething/ByVal [Do] As String");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_should_escape_fsharp_keywords()
         {
             var sut = CreateSut();
@@ -264,10 +263,10 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.FSharp, stepInstance, StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I '(.*)' something/WhenISomething/``do`` : string");
+            result.Should().Be("When/@\"^I '(.*)' something$\"/WhenISomething/``do`` : string");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_should_not_escape_fsharp_keywords_when_differently_cased()
         {
             var sut = CreateSut();
@@ -276,16 +275,16 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.FSharp, stepInstance, StepDefinitionSkeletonStyle.RegexAttribute, bindingCulture);
 
-            result.Should().Be("When/I '(.*)' something/WhenISomething/finaLLY : string");
+            result.Should().Be("When/@\"^I '(.*)' something$\"/WhenISomething/finaLLY : string");
         }
 
-        private StepInstance CreateWhenWithSingleParam()
+        private StepInstance CreateWhenWithSingleParam(bool wrapQuotes = true)
         {
             var stepInstance = CreateSimpleWhen("I 'do' something");
             analizeResult.TextParts.Clear();
-            analizeResult.TextParts.Add("I '");
-            analizeResult.TextParts.Add("' something");
-            analizeResult.Parameters.Add(new AnalyzedStepParameter("String", "p0", ".*"));
+            analizeResult.TextParts.Add("I " + (wrapQuotes ? "'" : ""));
+            analizeResult.TextParts.Add((wrapQuotes ? "'" : "") + " something");
+            analizeResult.Parameters.Add(new AnalyzedStepParameter("String", "p0", ".*", "string"));
             return stepInstance;
         }
 
@@ -330,7 +329,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
         }
 
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_simple_underscored_method_name_style()
         {
             var sut = CreateSut();
@@ -340,7 +339,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
             result.Should().Be("When/When_I_do_something/");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_punctuated_underscored_method_name_style()
         {
             var sut = CreateSut();
@@ -350,7 +349,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
             result.Should().Be("When/When_I_do_something/");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_parametrized_underscored_method_name_style()
         {
             var sut = CreateSut();
@@ -362,7 +361,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
             result.Should().Be("When/When_I_P0_something/string p0");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_non_latin_underscored_method_name_style()
         {
             var sut = CreateSut();
@@ -372,7 +371,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
             result.Should().Be("When/When_Árvíztűrő_tükörfúrógép/");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_simple_pascal_case_method_name_style()
         {
             var sut = CreateSut();
@@ -382,7 +381,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
             result.Should().Be("When/WhenIDoSomething/");
         }
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_parametrized_pascal_case_method_name_style()
         {
             var sut = CreateSut();
@@ -395,7 +394,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
         }
 
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_parametrized_pascal_case_method_name_style_with_parameter_at_the_end()
         {
             var sut = CreateSut();
@@ -412,14 +411,36 @@ namespace TechTalk.SpecFlow.RuntimeTests.BindingSkeletons
         }
 
 
-        [Test]
+        [Fact]
         public void Should_GetStepDefinitionSkeleton_generate_simple_regex_method_name_style()
         {
             var sut = CreateSut();
 
             var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.FSharp, CreateSimpleWhen(), StepDefinitionSkeletonStyle.MethodNameRegex, bindingCulture);
 
-            result.Should().Be("When/``I do something``/");
+            result.Should().Be("When/``^I do something$``/");
+        }
+
+        [Fact]
+        public void Should_GetStepDefinitionSkeleton_generate_cucumber_expression()
+        {
+            var sut = CreateSut();
+
+            var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.CSharp, CreateSimpleWhen(), StepDefinitionSkeletonStyle.CucumberExpressionAttribute, bindingCulture);
+
+            result.Should().Be("When/\"I do something\"/WhenIDoSomething/");
+        }
+
+        [Fact]
+        public void Should_GetStepDefinitionSkeleton_generate_cucumber_expression_with_parameter()
+        {
+            var sut = CreateSut();
+
+            var stepInstance = CreateWhenWithSingleParam(wrapQuotes: false);
+
+            var result = sut.GetStepDefinitionSkeleton(ProgrammingLanguage.CSharp, stepInstance, StepDefinitionSkeletonStyle.CucumberExpressionAttribute, bindingCulture);
+
+            result.Should().Be("When/\"I {string} something\"/WhenISomething/string p0");
         }
     }
 }

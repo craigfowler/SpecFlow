@@ -8,31 +8,20 @@ using TechTalk.SpecFlow.BindingSkeletons;
 using TechTalk.SpecFlow.Compatibility;
 using TechTalk.SpecFlow.Configuration.AppConfig;
 using TechTalk.SpecFlow.Configuration.JsonConfig;
-using TechTalk.SpecFlow.Plugins;
 using TechTalk.SpecFlow.Tracing;
 
 namespace TechTalk.SpecFlow.Configuration
 {
-    public interface IConfigurationLoader
-    {
-        SpecFlowConfiguration Load(SpecFlowConfiguration specFlowConfiguration, ISpecFlowConfigurationHolder specFlowConfigurationHolder);
-
-        SpecFlowConfiguration Load(SpecFlowConfiguration specFlowConfiguration);
-
-        SpecFlowConfiguration Update(SpecFlowConfiguration specFlowConfiguration, ConfigurationSectionHandler specFlowConfigSection);
-
-        void TraceConfigSource(ITraceListener traceListener, SpecFlowConfiguration specFlowConfiguration);
-    }
-
     public class ConfigurationLoader : IConfigurationLoader
     {
         private readonly AppConfigConfigurationLoader _appConfigConfigurationLoader;
         //private readonly ObjectContainer _objectContainer;
         private readonly JsonConfigurationLoader _jsonConfigurationLoader;
+        private readonly ISpecFlowJsonLocator _specFlowJsonLocator;
 
-
-        public ConfigurationLoader()
+        public ConfigurationLoader(ISpecFlowJsonLocator specFlowJsonLocator)
         {
+            _specFlowJsonLocator = specFlowJsonLocator;
             _jsonConfigurationLoader = new JsonConfigurationLoader();
             _appConfigConfigurationLoader = new AppConfigConfigurationLoader();
         }
@@ -55,13 +44,15 @@ namespace TechTalk.SpecFlow.Configuration
         private static StepDefinitionSkeletonStyle DefaultStepDefinitionSkeletonStyle => ConfigDefaults.StepDefinitionSkeletonStyle;
 
         private static List<string> DefaultAdditionalStepAssemblies => new List<string>();
-        private static List<PluginDescriptor> DefaultPluginDescriptors => new List<PluginDescriptor>();
         private static bool DefaultAllowDebugGeneratedFiles => ConfigDefaults.AllowDebugGeneratedFiles;
         private static bool DefaultAllowRowTests => ConfigDefaults.AllowRowTests;
         public static string DefaultGeneratorPath => ConfigDefaults.GeneratorPath;
 
-        public static bool DefaultMarkFeaturesParallelizable => ConfigDefaults.MarkFeaturesParallelizable;
-        public static string[] DefaultSkipParallelizableMarkerForTags => ConfigDefaults.SkipParallelizableMarkerForTags;
+        public static string[] DefaultAddNonParallelizableMarkerForTags => ConfigDefaults.AddNonParallelizableMarkerForTags;
+
+        public static ObsoleteBehavior DefaultObsoleteBehavior => ConfigDefaults.ObsoleteBehavior;
+
+        public static bool DefaultColoredOutput => ConfigDefaults.ColoredOutput;
 
         public bool HasAppConfig => ConfigurationManager.GetSection("specFlow") != null;
 
@@ -69,9 +60,7 @@ namespace TechTalk.SpecFlow.Configuration
         {
             get
             {
-                var specflowJsonFile = GetSpecflowJsonFilePath();
-
-
+                var specflowJsonFile = _specFlowJsonLocator.GetSpecFlowJsonFilePath();
                 return File.Exists(specflowJsonFile);
             }
         }
@@ -81,18 +70,13 @@ namespace TechTalk.SpecFlow.Configuration
             if (!specFlowConfigurationHolder.HasConfiguration)
                 return GetDefault();
 
-            switch (specFlowConfigurationHolder.ConfigSource)
+            return specFlowConfigurationHolder.ConfigSource switch
             {
-                case ConfigSource.Default:
-                    return GetDefault();
-                case ConfigSource.AppConfig:
-                    return LoadAppConfig(specFlowConfiguration,
-                        ConfigurationSectionHandler.CreateFromXml(specFlowConfigurationHolder.Content));
-                case ConfigSource.Json:
-                    return LoadJson(specFlowConfiguration, specFlowConfigurationHolder.Content);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+                ConfigSource.Default => GetDefault(),
+                ConfigSource.AppConfig => LoadAppConfig(specFlowConfiguration, ConfigurationSectionHandler.CreateFromXml(specFlowConfigurationHolder.Content)),
+                ConfigSource.Json => LoadJson(specFlowConfiguration, specFlowConfigurationHolder.Content),
+                _ => throw new ArgumentOutOfRangeException()
+            };
         }
 
         public SpecFlowConfiguration Load(SpecFlowConfiguration specFlowConfiguration)
@@ -133,23 +117,22 @@ namespace TechTalk.SpecFlow.Configuration
         public static SpecFlowConfiguration GetDefault()
         {
             return new SpecFlowConfiguration(ConfigSource.Default,
-                new ContainerRegistrationCollection(), 
-                new ContainerRegistrationCollection(), 
-                DefaultFeatureLanguage, 
-                DefaultBindingCulture, 
-                DefaultUnitTestProvider, 
-                DefaultStopAtFirstError, 
+                new ContainerRegistrationCollection(),
+                new ContainerRegistrationCollection(),
+                DefaultFeatureLanguage,
+                DefaultBindingCulture,
+                DefaultStopAtFirstError,
                 DefaultMissingOrPendingStepsOutcome,
-                DefaultTraceSuccessfulSteps, 
-                DefaultTraceTimings, 
+                DefaultTraceSuccessfulSteps,
+                DefaultTraceTimings,
                 DefaultMinTracedDuration,
-                DefaultStepDefinitionSkeletonStyle, 
-                DefaultAdditionalStepAssemblies, 
-                DefaultPluginDescriptors,
-                DefaultAllowDebugGeneratedFiles, 
+                DefaultStepDefinitionSkeletonStyle,
+                DefaultAdditionalStepAssemblies,
+                DefaultAllowDebugGeneratedFiles,
                 DefaultAllowRowTests,
-                DefaultMarkFeaturesParallelizable,
-                DefaultSkipParallelizableMarkerForTags
+                DefaultAddNonParallelizableMarkerForTags,
+                DefaultObsoleteBehavior,
+                DefaultColoredOutput
                 );
         }
 
@@ -170,7 +153,7 @@ namespace TechTalk.SpecFlow.Configuration
 
         private SpecFlowConfiguration LoadJson(SpecFlowConfiguration specFlowConfiguration)
         {
-            var jsonContent = File.ReadAllText(GetSpecflowJsonFilePath());
+            var jsonContent = File.ReadAllText(_specFlowJsonLocator.GetSpecFlowJsonFilePath());
 
             return LoadJson(specFlowConfiguration, jsonContent);
         }
@@ -180,11 +163,6 @@ namespace TechTalk.SpecFlow.Configuration
             return _jsonConfigurationLoader.LoadJson(specFlowConfiguration, jsonContent);
         }
 
-        private static string GetSpecflowJsonFilePath()
-        {
-            var directory = Path.GetDirectoryName(typeof(ConfigurationLoader).Assembly.Location);
-            var specflowJsonFile = Path.Combine(directory, "specflow.json");
-            return specflowJsonFile;
-        }
+
     }
 }

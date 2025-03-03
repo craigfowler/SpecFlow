@@ -1,100 +1,62 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using FluentAssertions;
-using TechTalk.SpecFlow.Specs.Drivers;
-using TechTalk.SpecFlow.Specs.Drivers.MsBuild;
+﻿using TechTalk.SpecFlow.TestProjectGenerator.Driver;
 
 namespace TechTalk.SpecFlow.Specs.StepDefinitions
 {
     [Binding]
     public class ProjectSteps
     {
-        private readonly InputProjectDriver inputProjectDriver;
-        private readonly ProjectGenerator projectGenerator;
-        private readonly ProjectCompiler projectCompiler;
-        private readonly HooksDriver _hooksDriver;
+        private readonly ProjectsDriver _projectsDriver;
+        private readonly CompilationDriver _compilationDriver;
+        private readonly CompilationResultDriver _compilationResultDriver;
 
-        public ProjectSteps(InputProjectDriver inputProjectDriver, ProjectGenerator projectGenerator, ProjectCompiler projectCompiler, HooksDriver hooksDriver)
+        public ProjectSteps(ProjectsDriver projectsDriver, CompilationDriver compilationDriver, CompilationResultDriver compilationResultDriver)
         {
-            this.inputProjectDriver = inputProjectDriver;
-            this.projectCompiler = projectCompiler;
-            _hooksDriver = hooksDriver;
-            this.projectGenerator = projectGenerator;
+            _projectsDriver = projectsDriver;
+            _compilationDriver = compilationDriver;
+            _compilationResultDriver = compilationResultDriver;
         }
 
         [Given(@"there is a SpecFlow project")]
         public void GivenThereIsASpecFlowProject()
         {
-            GivenThereIsASpecFlowProject("SpecFlow.TestProject");
+            _projectsDriver.CreateSpecFlowProject("C#");
         }
 
-        [Given(@"there is a SpecFlow project '(.*)'")]
-        public void GivenThereIsASpecFlowProject(string projectName)
+        [Given(@"it is using SpecFlow\.Tools\.MSBuild\.Generator")]
+        public void GivenItIsUsingSpecFlow_Tools_MSBuild_Generator()
         {
-            inputProjectDriver.ProjectName = projectName;
         }
+
+
+        [Given(@"parallel execution is enabled")]
+        public void GivenParallelExecutionIsEnabled()
+        {
+            _projectsDriver.EnableTestParallelExecution();
+        }
+
 
         [Given(@"I have a '(.*)' test project")]
         public void GivenIHaveATestProject(string language)
         {
-            inputProjectDriver.Language = language;
+            _projectsDriver.CreateProject(language);
         }
 
-
-        private bool isCompiled = false;
-        private Exception CompilationError;
-
-//        [BeforeScenarioBlock]
-//        public void CompileProject()
-//        {
-//            if ((ScenarioContext.Current.CurrentScenarioBlock == ScenarioBlock.When))
-//            {
-//                EnsureCompiled();
-//            }
-//        }
-//
-        public void EnsureCompiled()
-        {
-            if (!isCompiled)
-            {
-                try
-                {
-                    CompileInternal();
-                }
-                finally
-                {
-                    isCompiled = true;
-                }
-            }
-        }
-
-        private void CompileInternal()
-        {
-            var project = projectGenerator.GenerateProject(inputProjectDriver);
-            projectCompiler.Compile(project);
-
-            _hooksDriver.EnsureInitialized();
-        }
-
-        [When(@"the project is compiled")]
+        [When(@"I compile the solution")]
         public void WhenTheProjectIsCompiled()
         {
-            try
-            {
-                CompilationError = null;
-                CompileInternal();
-            }
-            catch (Exception ex)
-            {
-                CompilationError = ex;
-            }
+            _compilationDriver.CompileSolution();
         }
 
         [Then(@"no compilation errors are reported")]
         public void ThenNoCompilationErrorsAreReported()
         {
-            CompilationError.Should().BeNull();
+            _compilationResultDriver.CheckSolutionShouldHaveCompiled();
+        }
+
+        [Then(@"is a compilation error")]
+        public void ThenIsACompilationError()
+        {
+            _compilationResultDriver.CheckSolutionShouldHaveCompileError();
         }
     }
 }

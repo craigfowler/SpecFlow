@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 using FluentAssertions;
 using TechTalk.SpecFlow.Assist;
 using TechTalk.SpecFlow.RuntimeTests.AssistTests.ExampleEntities;
-using RowExtensionMethods = TechTalk.SpecFlow.Assist.RowExtensionMethods;
 
 namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
 {
-    [TestFixture]
+    
     public class RowExtensionMethodTests_GetEnum
     {
-        [Test]
+        [Fact]
         public void GetEnum_should_return_the_enum_value_from_the_row()
         {
             var table = new Table("Sex");
@@ -20,7 +19,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             table.Rows.First().GetEnum<Person>("Sex").Should().Be(Sex.Male);
         }
 
-        [Test]
+        [Fact]
         public void GetEnum_should_return_the_enum_value_from_the_row_even_when_i_use_spaces()
         {
             var table = new Table("Sex");
@@ -29,7 +28,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             table.Rows.First().GetEnum<Person>("Sex").Should().Be(Sex.UnknownSex);
         }
 
-        [Test]
+        [Fact]
         public void GetEnum_should_return_the_enum_value_from_the_row_even_when_i_mess_up_the_casing()
         {
             var table = new Table("Sex");
@@ -38,7 +37,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             table.Rows.First().GetEnum<Person>("Sex").Should().Be(Sex.Female);
         }
 
-        [Test]
+        [Fact]
         public void GetEnum_should_return_the_enum_value_from_the_row_even_when_i_mess_up_the_casing_and_use_spaces()
         {
             var table = new Table("Sex");
@@ -47,26 +46,62 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
             table.Rows.First().GetEnum<Person>("Sex").Should().Be(Sex.UnknownSex);
         }
 
-        [Test]
+        [Fact]
         public void GetEnum_throws_exception_when_the_value_is_not_defined_in_any_Enum_in_the_type()
         {
             var table = new Table("Sex");
-            table.AddRow("NotDefinied");
+            table.AddRow("NotDefined");
 
-            var exceptionThrown = false;
-            try
-            {
-                RowExtensionMethods.GetEnum<Person>(table.Rows.First(), "Sex");
-            }
-            catch (InvalidOperationException exception)
-            {
-                if (exception.Message == "No enum with value NotDefinied found in type Person")
-                    exceptionThrown = true;
-            }
-            exceptionThrown.Should().BeTrue();
+            Action getNotDefinedEnum = () => table.Rows.First().GetEnum<Person>("Sex");
+
+            getNotDefinedEnum.Should().Throw<InvalidOperationException>().WithMessage("No enum with value NotDefined found in type Person");
         }
 
-        [Test]
+        [Fact]
+        public void GetDiscreteEnum_should_return_enum_of_my_specified_type()
+        {
+            var table = new Table("Header Not Representing Property Of Any Class");
+            table.AddRow("Red");
+
+            var discreteEnum = table.Rows[0].GetDiscreteEnum<Colors>("Header Not Representing Property Of Any Class");
+
+            discreteEnum.Should().Be(Colors.Red);
+        }
+
+        [Fact]
+        public void GetDiscreteEnum_throws_exception_when_the_value_is_not_defined_in_enum()
+        {
+            var table = new Table("Header Not Representing Property Of Any Class");
+            table.AddRow("NotDefined");
+
+            Action getDiscreteEnum = () => table.Rows[0].GetDiscreteEnum<Colors>("Header Not Representing Property Of Any Class");
+
+            getDiscreteEnum.Should().Throw<InvalidOperationException>().WithMessage("No enum with value NotDefined found in enum Colors");
+        }
+
+        [Fact]
+        public void GetDiscreteEnum_should_return_not_default_enum_if_value_matched()
+        {
+            var table = new Table("Header Not Representing Property Of Any Class");
+            table.AddRow("Red");
+
+            var discreteEnum = table.Rows[0].GetDiscreteEnum("Header Not Representing Property Of Any Class", Colors.Green);
+
+            discreteEnum.Should().Be(Colors.Red);
+        }
+
+        [Fact]
+        public void GetDiscreteEnum_should_return_default_enum_if_value_is_not_defined_in_enum()
+        {
+            var table = new Table("Header Not Representing Property Of Any Class");
+            table.AddRow("NotDefined");
+
+            var discreteEnum = table.Rows[0].GetDiscreteEnum("Header Not Representing Property Of Any Class", Colors.Green);
+
+            discreteEnum.Should().Be(Colors.Green);
+        }
+
+        [Fact]
         public void GetEnum_should_work_when_there_are_two_enums_of_the_same_type()
         {
             var table = new Table("Color", "AnotherColor");
@@ -81,7 +116,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests
                 .Should().Be(Colors.Green);
         }
 
-        [Test]
+        [Fact]
         public void GetEnums_should_only_return_the_enum_of_the_requested_property()
         {
             var table = new Table("ColorsAgain1", "Color", "ColorsAgain2");

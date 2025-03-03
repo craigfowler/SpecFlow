@@ -1,10 +1,26 @@
-using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace TechTalk.SpecFlow.Configuration.JsonConfig
 {
     public class JsonConfig
     {
-        [JsonProperty(PropertyName = "specflow", NullValueHandling = NullValueHandling.Ignore)]
-        public SpecFlowElement SpecFlow { get; set; }
+        [DataMember(Name = "language")]
+        public LanguageElement Language { get; set; }
+
+        [DataMember(Name = "bindingCulture")]
+        public BindingCultureElement BindingCulture { get; set; }
+
+        [DataMember(Name = "runtime")]
+        public RuntimeElement Runtime { get; set; }
+
+        [DataMember(Name = "generator")]
+        public GeneratorElement Generator { get; set; }
+
+        [DataMember(Name = "trace")]
+        public TraceElement Trace { get; set; }
+
+        [DataMember(Name = "stepAssemblies")]
+        public List<StepAssemblyElement> StepAssemblies { get; set; }
     }
 }

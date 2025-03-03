@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using TechTalk.SpecFlow.Plugins;
-
-namespace TechTalk.SpecFlow.Configuration
+﻿namespace TechTalk.SpecFlow.Configuration
 {
     public class DefaultRuntimeConfigurationProvider : IRuntimeConfigurationProvider
     {
@@ -13,13 +10,8 @@ namespace TechTalk.SpecFlow.Configuration
         }
 
         public SpecFlowConfiguration LoadConfiguration(SpecFlowConfiguration specFlowConfiguration)
-        {            
-            return _configurationLoader.Load(specFlowConfiguration);
-        }
-
-        public IEnumerable<PluginDescriptor> GetPlugins(SpecFlowConfiguration specFlowConfiguration)
         {
-            return specFlowConfiguration.Plugins;
+            return _configurationLoader.Load(specFlowConfiguration);
         }
     }
 }

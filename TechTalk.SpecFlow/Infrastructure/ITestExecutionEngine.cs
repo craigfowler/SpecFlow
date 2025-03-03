@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Threading.Tasks;
 using TechTalk.SpecFlow.Bindings;
 
 namespace TechTalk.SpecFlow.Infrastructure
@@ -9,17 +8,20 @@ namespace TechTalk.SpecFlow.Infrastructure
         FeatureContext FeatureContext { get; }
         ScenarioContext ScenarioContext { get; }
 
-        void OnTestRunStart();
-        void OnTestRunEnd();
+        Task OnTestRunStartAsync();
+        Task OnTestRunEndAsync();
 
-        void OnFeatureStart(FeatureInfo featureInfo);
-        void OnFeatureEnd();
+        Task OnFeatureStartAsync(FeatureInfo featureInfo);
+        Task OnFeatureEndAsync();
 
-        void OnScenarioStart(ScenarioInfo scenarioInfo);
-        void OnAfterLastStep();
-        void OnScenarioEnd();
+        void OnScenarioInitialize(ScenarioInfo scenarioInfo);
+        Task OnScenarioStartAsync();
+        Task OnAfterLastStepAsync();
+        Task OnScenarioEndAsync();
 
-        void Step(StepDefinitionKeyword stepDefinitionKeyword, string keyword, string text, string multilineTextArg, Table tableArg);
+        void OnScenarioSkipped();
+
+        Task StepAsync(StepDefinitionKeyword stepDefinitionKeyword, string keyword, string text, string multilineTextArg, Table tableArg);
 
         void Pending();
     }

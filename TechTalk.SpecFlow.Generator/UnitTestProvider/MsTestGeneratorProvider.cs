@@ -1,29 +1,26 @@
 ﻿using System;
 using System.CodeDom;
 using System.Collections.Generic;
-using System.Linq;
-using TechTalk.SpecFlow.Utils;
+using TechTalk.SpecFlow.Generator.CodeDom;
+using BoDi;
 
 namespace TechTalk.SpecFlow.Generator.UnitTestProvider
 {
     public class MsTestGeneratorProvider : IUnitTestGeneratorProvider
     {
-        protected const string TESTFIXTURE_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute";
-        protected const string TEST_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute";
-        protected const string PROPERTY_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute";
-        protected const string TESTFIXTURESETUP_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.ClassInitializeAttribute";
-        protected const string TESTFIXTURETEARDOWN_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.ClassCleanupAttribute";
-        protected const string TESTSETUP_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute";
-        protected const string TESTTEARDOWN_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute";
-        protected const string IGNORE_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.IgnoreAttribute";
-        protected const string DESCRIPTION_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute";
-
-        protected const string FEATURE_TITILE_PROPERTY_NAME = "FeatureTitle";
-
-        protected const string TESTCONTEXT_TYPE = "Microsoft.VisualStudio.TestTools.UnitTesting.TestContext";
-
-        protected const string TESTCONTEXT_FIELD_NAME = "_testContext";
-        protected const string TESTCONTEXT_PROPERTY_NAME = "TestContext";
+        protected internal const string TESTFIXTURE_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute";
+        protected internal const string TEST_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute";
+        protected internal const string PROPERTY_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute";
+        protected internal const string TESTFIXTURESETUP_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.ClassInitializeAttribute";
+        protected internal const string TESTFIXTURETEARDOWN_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.ClassCleanupAttribute";
+        protected internal const string TESTSETUP_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute";
+        protected internal const string TESTTEARDOWN_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute";
+        protected internal const string IGNORE_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.IgnoreAttribute";
+        protected internal const string DESCRIPTION_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute";
+        protected internal const string FEATURE_TITILE_PROPERTY_NAME = "FeatureTitle";
+        protected internal const string TESTCONTEXT_TYPE = "Microsoft.VisualStudio.TestTools.UnitTesting.TestContext";
+        protected internal const string TESTCONTEXT_FIELD_NAME = "_testContext";
+        protected internal const string TESTCONTEXT_PROPERTY_NAME = "TestContext";
 
         protected CodeDomHelper CodeDomHelper { get; set; }
 
@@ -82,25 +79,24 @@ namespace TechTalk.SpecFlow.Generator.UnitTestProvider
 
         public virtual void FinalizeTestClass(TestClassGenerationContext generationContext)
         {
-            // testRunner.ScenarioContext.ScenarioContainer.RegisterInstanceAs<TestContext>(TestContext);
+            // testRunner.ScenarioContext.ScenarioContainer.RegisterInstanceAs<TestContext>(_testContext);
             generationContext.ScenarioInitializeMethod.Statements.Add(
                 new CodeMethodInvokeExpression(
                     new CodeMethodReferenceExpression(
                         new CodePropertyReferenceExpression(
                             new CodePropertyReferenceExpression(
                                 new CodeFieldReferenceExpression(null, generationContext.TestRunnerField.Name),
-                                "ScenarioContext"),
-                            "ScenarioContainer"),
-                        "RegisterInstanceAs",
+                                nameof(ScenarioContext)),
+                            nameof(ScenarioContext.ScenarioContainer)),
+                        nameof(IObjectContainer.RegisterInstanceAs),
                         new CodeTypeReference(TESTCONTEXT_TYPE)),
-                    new CodeVariableReferenceExpression(TESTCONTEXT_PROPERTY_NAME)));
+                    new CodeVariableReferenceExpression(TESTCONTEXT_FIELD_NAME)));
         }
 
-        public void SetTestClassParallelize(TestClassGenerationContext generationContext)
+        public virtual void SetTestClassNonParallelizable(TestClassGenerationContext generationContext)
         {
-            //Not Supported
+            //Not Supported            
         }
-
 
         public virtual void SetTestClassInitializeMethod(TestClassGenerationContext generationContext)
         {
@@ -136,6 +132,17 @@ namespace TechTalk.SpecFlow.Generator.UnitTestProvider
             var featureContextExpression = new CodePropertyReferenceExpression(
                 new CodeFieldReferenceExpression(null, generationContext.TestRunnerField.Name), 
                 "FeatureContext");
+
+            var callTestClassInitializeMethodExpression = new CodeMethodInvokeExpression(
+                new CodeTypeReferenceExpression(
+                    new CodeTypeReference(
+                        generationContext.Namespace.Name + "." + generationContext.TestClass.Name,
+                        CodeTypeReferenceOptions.GlobalReference)),
+                generationContext.TestClassInitializeMethod.Name,
+                new CodePrimitiveExpression(null));
+
+            CodeDomHelper.MarkCodeMethodInvokeExpressionAsAwait(callTestClassInitializeMethodExpression);
+            
             generationContext.TestInitializeMethod.Statements.Add(
                 new CodeConditionStatement(
                     new CodeBinaryOperatorExpression(
@@ -153,13 +160,7 @@ namespace TechTalk.SpecFlow.Generator.UnitTestProvider
                             CodeBinaryOperatorType.IdentityInequality,
                             new CodePrimitiveExpression(generationContext.Feature.Name))),
                     new CodeExpressionStatement(
-                        new CodeMethodInvokeExpression(
-                            new CodeTypeReferenceExpression(
-                                new CodeTypeReference(
-                                    generationContext.Namespace.Name + "." + generationContext.TestClass.Name, 
-                                    CodeTypeReferenceOptions.GlobalReference)),
-                            generationContext.TestClassInitializeMethod.Name,
-                            new CodePrimitiveExpression(null)))));
+                        callTestClassInitializeMethodExpression)));
         }
 
         public void SetTestCleanupMethod(TestClassGenerationContext generationContext)
@@ -201,7 +202,6 @@ namespace TechTalk.SpecFlow.Generator.UnitTestProvider
             throw new NotSupportedException();
         }
 
-
         public virtual void SetTestMethodAsRow(TestClassGenerationContext generationContext, CodeMemberMethod testMethod, string scenarioTitle, string exampleSetName, string variantName, IEnumerable<KeyValuePair<string, string>> arguments)
         {
             if (!string.IsNullOrEmpty(exampleSetName))
@@ -218,6 +218,20 @@ namespace TechTalk.SpecFlow.Generator.UnitTestProvider
             {
                 SetProperty(testMethod, "Parameter:" + pair.Key, pair.Value);
             }
+        }
+
+        public void MarkCodeMethodInvokeExpressionAsAwait(CodeMethodInvokeExpression expression)
+        {
+            CodeDomHelper.MarkCodeMethodInvokeExpressionAsAwait(expression);
+        }
+
+        public CodeExpression GetTestWorkerIdExpression()
+        {
+            // System.Threading.Thread.CurrentThread.ManagedThreadId.ToString()
+            return new CodeMethodInvokeExpression(
+                new CodeVariableReferenceExpression("System.Threading.Thread.CurrentThread.ManagedThreadId"),
+                nameof(ToString)
+            );
         }
     }
 }

@@ -1,53 +1,36 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace TechTalk.SpecFlow.Tracing
 {
-    public interface ITraceListenerQueue : IDisposable
-    {
-        void Start();
-        void EnqueueMessgage(ITestRunner sourceTestRunner, string message, bool isToolMessgae);
-    }
-
     public class TraceListenerQueue : ITraceListenerQueue
     {
-        struct TraceMessage
-        {
-            public bool IsToolMessage { get; set; }
-            public string Message { get; set; }
+        private readonly ITestRunnerManager _testRunnerManager;
 
-            public TraceMessage(bool isToolMessage, string message) : this()
-            {
-                IsToolMessage = isToolMessage;
-                Message = message;
-            }
-        }
-
-        private readonly ITraceListener traceListener;
-        private readonly ITestRunnerManager testRunnerManager;
-        private readonly BlockingCollection<TraceMessage> messages = new BlockingCollection<TraceMessage>();
-        private Task consumerTask;
-        private Exception error = null;
-        private bool isThreadSafeTraceListener;
+        private readonly ITraceListener _traceListener;
+        private readonly bool _isThreadSafeTraceListener;
+        private BlockingCollection<TraceMessage> _messages;
+        private Task _consumerTask;
+        private Exception _error;
 
         public TraceListenerQueue(ITraceListener traceListener, ITestRunnerManager testRunnerManager)
         {
-            this.traceListener = traceListener;
-            this.testRunnerManager = testRunnerManager;
-            isThreadSafeTraceListener = traceListener is IThreadSafeTraceListener;
+            _traceListener = traceListener;
+            _testRunnerManager = testRunnerManager;
+            _isThreadSafeTraceListener = traceListener is IThreadSafeTraceListener;
         }
 
         public void Start()
         {
-            consumerTask = Task.Factory.StartNew(() =>
+            _messages = new BlockingCollection<TraceMessage>();
+            _consumerTask = Task.Factory.StartNew(() =>
             {
                 try
                 {
                     while (true)
                     {
-                        var message = messages.Take();
+                        var message = _messages.Take();
                         ForwardMessage(message);
                     }
                 }
@@ -56,50 +39,64 @@ namespace TechTalk.SpecFlow.Tracing
                 }
                 catch (Exception ex)
                 {
-                    this.error = ex;
+                    _error = ex;
                 }
-            });
+            },
+            // We don't want to block an thread of the pool for the whole duration, so create a new Thread for it
+            TaskCreationOptions.LongRunning);
         }
 
-        private void ForwardMessage(TraceMessage message)
+        public void EnqueueMessage(ITestRunner sourceTestRunner, string message, bool isToolMessgae)
         {
-            if (message.IsToolMessage)
-                traceListener.WriteToolOutput(message.Message);
-            else
-                traceListener.WriteTestOutput(message.Message);
-        }
+            if (_error != null)
+                throw new SpecFlowException("Trace listener failed.", _error);
 
-        public void EnqueueMessgage(ITestRunner sourceTestRunner, string message, bool isToolMessgae)
-        {
-            if (error != null)
-                throw new SpecFlowException("Trace listener failed.", error);
-
-            if (isThreadSafeTraceListener || !testRunnerManager.IsMultiThreaded)
+            if (_isThreadSafeTraceListener || !_testRunnerManager.IsMultiThreaded)
             {
                 // log synchronously
                 ForwardMessage(new TraceMessage(isToolMessgae, message));
                 return;
             }
 
-            if (consumerTask == null)
+            if (_consumerTask == null)
             {
                 lock (this)
                 {
-                    if (consumerTask == null)
+                    if (_consumerTask == null)
                         Start();
                 }
             }
 
-            messages.Add(new TraceMessage(isToolMessgae, string.Format("#{1}: {0}", message, sourceTestRunner.ThreadId)));
+            _messages.Add(new TraceMessage(isToolMessgae, string.Format("#{1}: {0}", message, sourceTestRunner.TestWorkerId)));
         }
 
         public void Dispose()
         {
-            if (consumerTask != null)
+            if (_consumerTask != null)
             {
-                messages.CompleteAdding();
-                consumerTask.Wait();
-                consumerTask = null;
+                _messages.CompleteAdding();
+                _consumerTask.Wait();
+                _consumerTask = null;
+            }
+        }
+
+        private void ForwardMessage(TraceMessage message)
+        {
+            if (message.IsToolMessage)
+                _traceListener.WriteToolOutput(message.Message);
+            else
+                _traceListener.WriteTestOutput(message.Message);
+        }
+
+        private readonly struct TraceMessage
+        {
+            public bool IsToolMessage { get; }
+            public string Message { get; }
+
+            public TraceMessage(bool isToolMessage, string message) : this()
+            {
+                IsToolMessage = isToolMessage;
+                Message = message;
             }
         }
     }

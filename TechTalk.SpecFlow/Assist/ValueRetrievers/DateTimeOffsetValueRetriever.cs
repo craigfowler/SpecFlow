@@ -1,25 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 
 namespace TechTalk.SpecFlow.Assist.ValueRetrievers
 {
-    public class DateTimeOffsetValueRetriever : IValueRetriever
+    public class DateTimeOffsetValueRetriever : StructRetriever<DateTimeOffset>
     {
-        public virtual DateTimeOffset GetValue(string value)
-        {
-            DateTimeOffset.TryParse(value, CultureInfo.CurrentCulture,DateTimeStyles.None, out DateTimeOffset returnValue);
-			return returnValue;
-        }
+        /// <summary>
+        /// Gets or sets the DateTimeStyles to use when parsing the string value.
+        /// </summary>
+        /// <remarks>Defaults to DateTimeStyles.None.</remarks>
+        public static DateTimeStyles DateTimeStyles { get; set; } = DateTimeStyles.None;
 
-        public object Retrieve(KeyValuePair<string, string> keyValuePair, Type targetType, Type propertyType)
+        protected override DateTimeOffset GetNonEmptyValue(string value)
         {
-            return GetValue(keyValuePair.Value);
-        }
-
-        public bool CanRetrieve(KeyValuePair<string, string> keyValuePair, Type targetType, Type propertyType)
-        {
-            return propertyType == typeof(DateTimeOffset);
+            DateTimeOffset.TryParse(value, CultureInfo.CurrentCulture, DateTimeStyles, out DateTimeOffset returnValue);
+            return returnValue;
         }
     }
 }

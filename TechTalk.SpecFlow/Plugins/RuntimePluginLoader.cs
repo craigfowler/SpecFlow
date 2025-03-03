@@ -1,31 +1,38 @@
 ﻿using System;
 using System.Reflection;
+using TechTalk.SpecFlow.Tracing;
 
 namespace TechTalk.SpecFlow.Plugins
 {
     public class RuntimePluginLoader : IRuntimePluginLoader
     {
-        private const string ASSEMBLY_NAME_PATTERN = "{0}.SpecFlowPlugin";
-
-        public IRuntimePlugin LoadPlugin(PluginDescriptor pluginDescriptor)
+        public IRuntimePlugin LoadPlugin(string pluginAssemblyName, ITraceListener traceListener, bool traceMissingPluginAttribute)
         {
-            var assemblyName = string.Format(ASSEMBLY_NAME_PATTERN, pluginDescriptor.Name);
             Assembly assembly;
             try
             {
-                assembly = Assembly.Load(assemblyName);
+#if NETSTANDARD
+                assembly = PluginAssemblyResolver.Load(pluginAssemblyName);
+#else
+                assembly = Assembly.LoadFrom(pluginAssemblyName);
+#endif
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                throw new SpecFlowException(string.Format("Unable to load plugin: {0}. Please check http://go.specflow.org/doc-plugins for details.", pluginDescriptor.Name), ex);
+                throw new SpecFlowException($"Unable to load plugin: {pluginAssemblyName}. Please check https://go.specflow.org/doc-plugins for details.", ex);
             }
 
             var pluginAttribute = (RuntimePluginAttribute)Attribute.GetCustomAttribute(assembly, typeof(RuntimePluginAttribute));
             if (pluginAttribute == null)
-                throw new SpecFlowException(string.Format("Missing [assembly:RuntimePlugin] attribute in {0}. Please check http://go.specflow.org/doc-plugins for details.", assembly.FullName));
+            {
+                if (traceMissingPluginAttribute)
+                    traceListener.WriteToolOutput($"Missing [assembly:RuntimePlugin] attribute in {assembly.FullName}. Please check https://go.specflow.org/doc-plugins for details.");
 
-            if (!typeof(IRuntimePlugin).IsAssignableFrom((pluginAttribute.PluginType)))
-                throw new SpecFlowException(string.Format("Invalid plugin attribute in {0}. Plugin type must implement IRuntimePlugin. Please check http://go.specflow.org/doc-plugins for details.", assembly.FullName));
+                return null;
+            }
+
+            if (!typeof(IRuntimePlugin).IsAssignableFrom(pluginAttribute.PluginType))
+                throw new SpecFlowException($"Invalid plugin attribute in {assembly.FullName}. Plugin type must implement IRuntimePlugin. Please check https://go.specflow.org/doc-plugins for details.");
 
             IRuntimePlugin plugin;
             try
@@ -34,10 +41,10 @@ namespace TechTalk.SpecFlow.Plugins
             }
             catch (Exception ex)
             {
-                throw new SpecFlowException(string.Format("Invalid plugin in {0}. Plugin must have a default constructor that does not throw exception. Please check http://go.specflow.org/doc-plugins for details.", assembly.FullName), ex);
+                throw new SpecFlowException($"Invalid plugin in {assembly.FullName}. Plugin must have a default constructor that does not throw exception. Please check https://go.specflow.org/doc-plugins for details.", ex);
             }
 
             return plugin;
-        }       
+        }
     }
 }

@@ -1,69 +1,55 @@
-﻿using System;
-using FluentAssertions;
-using TechTalk.SpecFlow.Specs.Drivers;
+﻿using TechTalk.SpecFlow.Specs.Drivers;
+using TechTalk.SpecFlow.TestProjectGenerator.Driver;
 
 namespace TechTalk.SpecFlow.Specs.StepDefinitions
 {
     [Binding]
     public class ExecutionSteps
     {
-        private readonly ProjectSteps projectSteps;
-        private readonly AppConfigConfigurationDriver configurationDriver;
-        private readonly NUnit3TestExecutionDriver nUnit3TestExecutionDriver;
-        private readonly NUnit2TestExecutionDriver nUnit2TestExecutionDriver;
-        private readonly XUnitTestExecutionDriver xUnitTestExecutionDriver;
-        private readonly MsTestTestExecutionDriver msTestTestExecutionDriver;
+        private readonly ExecutionDriver _executionDriver;
+        private readonly CompilationDriver _compilationDriver;
 
-        public ExecutionSteps(NUnit3TestExecutionDriver nUnit3TestExecutionDriver, NUnit2TestExecutionDriver nUnit2TestExecutionDriver, XUnitTestExecutionDriver xUnitTestExecutionDriver,
-            AppConfigConfigurationDriver configurationDriver, MsTestTestExecutionDriver msTestTestExecutionDriver,
-            ProjectSteps projectSteps)
+        public ExecutionSteps(ExecutionDriver executionDriver, CompilationDriver compilationDriver)
         {
-            this.nUnit3TestExecutionDriver = nUnit3TestExecutionDriver;
-            this.nUnit2TestExecutionDriver = nUnit2TestExecutionDriver;
-            this.xUnitTestExecutionDriver = xUnitTestExecutionDriver;
-            this.projectSteps = projectSteps;
-            this.msTestTestExecutionDriver = msTestTestExecutionDriver;
-            this.configurationDriver = configurationDriver;
+            _executionDriver = executionDriver;
+            _compilationDriver = compilationDriver;
         }
 
         [When(@"I execute the tests")]
         public void WhenIExecuteTheTests()
         {
-            configurationDriver.UnitTestProviderName.Should().Be("NUnit");
+            _executionDriver.ExecuteTests();
+        }
 
-            projectSteps.EnsureCompiled();
-            nUnit3TestExecutionDriver.Execute();
+        [When(@"I execute the tests (once|twice|\d+ times)")]
+        public void WhenIExecuteTheTestsTwice(uint times)
+        {
+            _executionDriver.ExecuteTestsTimes(times);
         }
 
         [When(@"I execute the tests tagged with '@(.+)'")]
         public void WhenIExecuteTheTestsTaggedWithTag(string tag)
         {
-            nUnit3TestExecutionDriver.Include = tag;
-            WhenIExecuteTheTests();
+            _executionDriver.ExecuteTestsWithTag(tag);
         }
 
-        [When(@"I execute the tests with (.*)")]
-        public void WhenIExecuteTheTestsWith(string unitTestProvider)
+        [Given(@"'(dotnet msbuild|dotnet build|MSBuild)' is used for compiling")]
+        public void GivenIsUsedForCompiling(BuildTool buildTool)
         {
-            projectSteps.EnsureCompiled();
+            _compilationDriver.SetBuildTool(buildTool);
+        }
 
-            switch (unitTestProvider)
-            {
-                case "NUnit.2":
-                    nUnit2TestExecutionDriver.Execute();
-                    break;
-                case "NUnit":
-                    nUnit3TestExecutionDriver.Execute();
-                    break;
-                case "MsTest":
-                    msTestTestExecutionDriver.Execute();
-                    break;
-                case "xUnit":
-                    xUnitTestExecutionDriver.Execute();
-                    break;
-                default:
-                    throw new NotSupportedException();
-            }
+        [When(@"^I build the solution using '(dotnet msbuild|dotnet build|MSBuild)'$")]
+        [When(@"^I compile the solution using '(dotnet msbuild|dotnet build|MSBuild)'$")]
+        public void WhenIBuildTheSolutionUsing(BuildTool buildTool)
+        {
+            _compilationDriver.CompileSolution(buildTool);
+        }
+
+        [When(@"the solution is built (once|twice|\d+ times)")]
+        public void WhenTheSolutionIsBuiltTwice(uint times)
+        {
+            _compilationDriver.CompileSolutionTimes(times);
         }
     }
 }

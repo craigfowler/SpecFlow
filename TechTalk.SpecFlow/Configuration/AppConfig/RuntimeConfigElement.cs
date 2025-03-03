@@ -13,13 +13,6 @@ namespace TechTalk.SpecFlow.Configuration.AppConfig
             set { this["dependencies"] = value; }
         }
 
-        [ConfigurationProperty("detectAmbiguousMatches", DefaultValue = ConfigDefaults.DetectAmbiguousMatches, IsRequired = false)]
-        public bool DetectAmbiguousMatches
-        {
-            get { return (bool)this["detectAmbiguousMatches"]; }
-            set { this["detectAmbiguousMatches"] = value; }
-        }
-
         [ConfigurationProperty("stopAtFirstError", DefaultValue = ConfigDefaults.StopAtFirstError, IsRequired = false)]
         public bool StopAtFirstError
         {
@@ -32,6 +25,13 @@ namespace TechTalk.SpecFlow.Configuration.AppConfig
         {
             get { return (MissingOrPendingStepsOutcome)this["missingOrPendingStepsOutcome"]; }
             set { this["missingOrPendingStepsOutcome"] = value; }
+        }
+
+        [ConfigurationProperty("obsoleteBehavior", DefaultValue = ConfigDefaults.ObsoleteBehavior, IsRequired = false)]
+        public ObsoleteBehavior ObsoleteBehavior
+        {
+            get { return (ObsoleteBehavior)this["obsoleteBehavior"]; }
+            set { this["obsoleteBehavior"] = value; }
         }
     }
 }

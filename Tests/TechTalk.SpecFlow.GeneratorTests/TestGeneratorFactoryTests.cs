@@ -1,36 +1,33 @@
 ﻿using System;
 using System.Linq;
 using FluentAssertions;
-using NUnit.Framework;
+using Xunit;
 using TechTalk.SpecFlow.Configuration;
 using TechTalk.SpecFlow.Generator;
 using TechTalk.SpecFlow.Generator.Interfaces;
 
 namespace TechTalk.SpecFlow.GeneratorTests
 {
-    [TestFixture]
     public class TestGeneratorFactoryTests : TestGeneratorTestsBase
     {
-        private TestGeneratorFactory factory;
+        private readonly TestGeneratorFactory _factory;
 
-        [SetUp]
-        public override void Setup()
+        public TestGeneratorFactoryTests()
         {
-            base.Setup();
-            factory = new TestGeneratorFactory();
+            _factory = new TestGeneratorFactory();
         }
 
-        [Test]
+        [Fact]
         public void GetGeneratorVersion_should_return_a_version()
         {
-            factory.GetGeneratorVersion().Should().NotBeNull();
+            _factory.GetGeneratorVersion().Should().NotBeNull();
         }
 
-        [Test]
+        [Fact]
         public void Should_be_able_to_create_generator_with_default_config()
         {
             net35CSProjectSettings.ConfigurationHolder = new SpecFlowConfigurationHolder(ConfigSource.Default, null);
-            factory.CreateGenerator(net35CSProjectSettings).Should().NotBeNull();
+            _factory.CreateGenerator(net35CSProjectSettings, Enumerable.Empty<GeneratorPluginInfo>()).Should().NotBeNull();
         }
 
         private class DummyGenerator : ITestGenerator
@@ -56,7 +53,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             }
         }
 
-        [Test]
+        [Fact]
         public void Should_create_custom_generator_when_configured_so()
         {
             var configurationHolder = new SpecFlowConfigurationHolder(ConfigSource.AppConfig, string.Format(@"
@@ -72,7 +69,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
 
             var projectSettings = net35CSProjectSettings;
             projectSettings.ConfigurationHolder = configurationHolder;
-            var generator = factory.CreateGenerator(projectSettings);
+            var generator = _factory.CreateGenerator(projectSettings, Enumerable.Empty<GeneratorPluginInfo>());
             generator.Should().BeOfType<DummyGenerator>();
         }
     }

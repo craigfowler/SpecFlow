@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Globalization;
 using System.Threading;
-using NUnit.Framework;
+using Xunit;
 using FluentAssertions;
 using TechTalk.SpecFlow.RuntimeTests.AssistTests.ExampleEntities;
 
 namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
 {
-    [TestFixture]
+    
     public abstract class CreateInstanceHelperMethodTestBase
     {
         private readonly Func<Table, Person> func;
@@ -22,13 +22,12 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             return func(table);
         }
 
-        [SetUp]
-        public void SetUp()
+        public CreateInstanceHelperMethodTestBase()
         {
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US", false);
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_properties_with_different_case()
         {
             var table = new Table("Field", "Value");
@@ -39,7 +38,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             person.FirstName.Should().Be("John");
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_properties_from_column_names_with_blanks()
         {
             var table = new Table("Field", "Value");
@@ -50,7 +49,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             person.FirstName.Should().Be("John");
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_string_values()
         {
             var table = new Table("Field", "Value");
@@ -63,7 +62,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             person.LastName.Should().Be("Galt");
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_enum_values()
         {
             var table = new Table("Field", "Value");
@@ -74,7 +73,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             person.Sex.Should().Be(Sex.Male);
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_int_values()
         {
             var table = new Table("Field", "Value");
@@ -85,7 +84,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             person.NumberOfIdeas.Should().Be(3);
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_uint_values()
         {
             var table = new Table("Field", "Value");
@@ -96,7 +95,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             person.UnsignedInt.Should().Be(3);
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_decimal_values()
         {
             var table = new Table("Field", "Value");
@@ -107,7 +106,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             person.Salary.Should().Be(9.78M);
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_bool_values()
         {
             var table = new Table("Field", "Value");
@@ -118,9 +117,11 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             person.IsRational.Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_datetime_values()
         {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US", false); //CurrentCulture is sometimes reset to de-AT, no idea why
+
             var table = new Table("Field", "Value");
             table.AddRow("BirthDate", "12/31/2010");
             table.AddRow("NullableDateTime", "11/30/2011");
@@ -131,7 +132,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.TableHelperExtensionMethods
             person.NullableDateTime.Should().Be(new DateTime(2011, 11, 30));
         }
 
-        [Test]
+        [Fact]
         public virtual void Sets_char_values()
         {
             var table = new Table("Field", "Value");

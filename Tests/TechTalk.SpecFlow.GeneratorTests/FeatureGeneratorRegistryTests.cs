@@ -1,26 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using BoDi;
 using FluentAssertions;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using TechTalk.SpecFlow.Configuration;
 using TechTalk.SpecFlow.Generator;
+using TechTalk.SpecFlow.Generator.Generation;
 using TechTalk.SpecFlow.Generator.Interfaces;
 using TechTalk.SpecFlow.Generator.UnitTestConverter;
 using TechTalk.SpecFlow.Parser;
 
 namespace TechTalk.SpecFlow.GeneratorTests
 {
-    [TestFixture]
+    
     public class FeatureGeneratorRegistryTests
     {
         private IObjectContainer container;
-
-        [SetUp]
-        public void Setup()
+        
+        public FeatureGeneratorRegistryTests()
         {
-            container = GeneratorContainerBuilder.CreateContainer(new SpecFlowConfigurationHolder(ConfigSource.Default, null), new ProjectSettings());
+            container = new GeneratorContainerBuilder().CreateContainer(new SpecFlowConfigurationHolder(ConfigSource.Default, null), new ProjectSettings(), Enumerable.Empty<GeneratorPluginInfo>());
         }
 
         private FeatureGeneratorRegistry CreateFeatureGeneratorRegistry()
@@ -28,7 +29,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             return container.Resolve<FeatureGeneratorRegistry>();
         }
 
-        [Test]
+        [Fact]
         public void Should_create_UnitTestFeatureGenerator_with_default_setup()
         {
             var featureGeneratorRegistry = CreateFeatureGeneratorRegistry();
@@ -39,7 +40,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generator.Should().BeOfType<UnitTestFeatureGenerator>();
         }
 
-        [Test]
+        [Fact]
         public void Should_use_generic_provider_with_higher_priority()
         {
             var dummyGenerator = new Mock<IFeatureGenerator>().Object;
@@ -59,7 +60,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generator.Should().Be(dummyGenerator);
         }
 
-        [Test]
+        [Fact]
         public void Should_call_provider_wiht_the_given_feature()
         {
             var dummyGenerator = new Mock<IFeatureGenerator>().Object;
@@ -79,7 +80,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             genericHighPrioProvider.Verify(p => p.CreateGenerator(theDocument), Times.Once());
         }
 
-        [Test]
+        [Fact]
         public void Should_skip_high_priority_provider_when_not_applicable()
         {
             var dummyGenerator = new Mock<IFeatureGenerator>().Object;
@@ -100,10 +101,10 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generator.Should().BeOfType<UnitTestFeatureGenerator>();
         }
 
-        [Test]
+        [Fact]
         public void Should_FeatureGeneratorRegistry_be_registered_as_IFeatureGeneratorRegistry_by_default()
         {
-            var testContainer = GeneratorContainerBuilder.CreateContainer(new SpecFlowConfigurationHolder(ConfigSource.Default, null), new ProjectSettings());
+            var testContainer = new GeneratorContainerBuilder().CreateContainer(new SpecFlowConfigurationHolder(ConfigSource.Default, null), new ProjectSettings(), Enumerable.Empty<GeneratorPluginInfo>());
 
             var registry = testContainer.Resolve<IFeatureGeneratorRegistry>();
 
@@ -124,7 +125,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             }
         }
 
-        [Test]
+        [Fact]
         public void Should_TagFilteredFeatureGeneratorProvider_applied_for_registered_tag_name()
         {
             container.RegisterTypeAs<TestTagFilteredFeatureGeneratorProvider, IFeatureGeneratorProvider>("mytag");
@@ -138,7 +139,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generator.Should().Be(TestTagFilteredFeatureGeneratorProvider.DummyGenerator);
         }
 
-        [Test]
+        [Fact]
         public void Should_TagFilteredFeatureGeneratorProvider_applied_for_registered_tag_name_with_at()
         {
             container.RegisterTypeAs<TestTagFilteredFeatureGeneratorProvider, IFeatureGeneratorProvider>("@mytag");
@@ -152,7 +153,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generator.Should().Be(TestTagFilteredFeatureGeneratorProvider.DummyGenerator);
         }
 
-        [Test]
+        [Fact]
         public void Should_TagFilteredFeatureGeneratorProvider_not_be_applied_for_feature_with_other_tgas()
         {
             container.RegisterTypeAs<TestTagFilteredFeatureGeneratorProvider, IFeatureGeneratorProvider>("mytag");
@@ -166,7 +167,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generator.Should().NotBe(TestTagFilteredFeatureGeneratorProvider.DummyGenerator);
         }
 
-        [Test]
+        [Fact]
         public void Should_TagFilteredFeatureGeneratorProvider_not_be_applied_for_feature_with_no_tgas()
         {
             container.RegisterTypeAs<TestTagFilteredFeatureGeneratorProvider, IFeatureGeneratorProvider>("mytag");

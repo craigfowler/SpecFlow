@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using BoDi;
 using FluentAssertions;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using TechTalk.SpecFlow.Bindings.Discovery;
 using TechTalk.SpecFlow.Configuration;
 using TechTalk.SpecFlow.Infrastructure;
@@ -14,7 +15,7 @@ using TechTalk.SpecFlow.Tracing;
 
 namespace TechTalk.SpecFlow.RuntimeTests
 {
-    [TestFixture]
+    
     public class TestRunnerManagerRunnerCreationTests
     {
         private readonly Mock<ITestRunner> testRunnerFake = new Mock<ITestRunner>();
@@ -36,74 +37,75 @@ namespace TechTalk.SpecFlow.RuntimeTests
 
             var runtimeBindingRegistryBuilderMock = new Mock<IRuntimeBindingRegistryBuilder>();
 
-            var testRunnerManager = new TestRunnerManager(globalObjectContainerStub.Object, testRunContainerBuilderStub.Object, _specFlowConfigurationStub, runtimeBindingRegistryBuilderMock.Object);
+            var testRunnerManager = new TestRunnerManager(globalObjectContainerStub.Object, testRunContainerBuilderStub.Object, _specFlowConfigurationStub, runtimeBindingRegistryBuilderMock.Object,
+                Mock.Of<ITestTracer>());
             testRunnerManager.Initialize(anAssembly);
             return testRunnerManager;
         }
 
-        [Test]
+        [Fact]
         public void Should_resolve_a_test_runner()
         {
             var factory = CreateTestRunnerFactory();
 
-            var testRunner = factory.CreateTestRunner(0);
+            var testRunner = factory.CreateTestRunner("0");
             testRunner.Should().NotBeNull();
         }
 
-        [Test]
+        [Fact]
         public void Should_initialize_test_runner_with_the_provided_assembly()
         {
             var factory = CreateTestRunnerFactory();
-            factory.CreateTestRunner(0);
+            factory.CreateTestRunner("0");
 
-            testRunnerFake.Verify(tr => tr.OnTestRunStart());
+            factory.IsTestRunInitialized.Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void Should_initialize_test_runner_with_additional_step_assemblies()
         {
             var factory = CreateTestRunnerFactory();
             _specFlowConfigurationStub.AddAdditionalStepAssembly(anotherAssembly);
 
-            factory.CreateTestRunner(0);
+            factory.CreateTestRunner("0");
 
-            testRunnerFake.Verify(tr => tr.OnTestRunStart());
+            factory.IsTestRunInitialized.Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void Should_initialize_test_runner_with_the_provided_assembly_even_if_there_are_additional_ones()
         {
             var factory = CreateTestRunnerFactory();
             _specFlowConfigurationStub.AddAdditionalStepAssembly(anotherAssembly);
 
-            factory.CreateTestRunner(0);
+            factory.CreateTestRunner("0");
 
-            testRunnerFake.Verify(tr => tr.OnTestRunStart());
+            factory.IsTestRunInitialized.Should().BeTrue();
         }
 
 
-        [Test]
-        public void Should_resolve_a_test_runner_specific_test_tracer()
+        [Fact]
+        public async Task Should_resolve_a_test_runner_specific_test_tracer()
         {
             //This test can't run in NCrunch as when NCrunch runs the tests it will disable the ability to get different test runners for each thread 
             //as it manages the parallelisation 
             //see https://github.com/techtalk/SpecFlow/issues/638
             if (!TestEnvironmentHelper.IsBeingRunByNCrunch())
             {
-                var testRunner1 = TestRunnerManager.GetTestRunner(anAssembly, 0);
-                testRunner1.OnFeatureStart(new FeatureInfo(new CultureInfo("en-US"), "sds", "sss"));
-                testRunner1.OnScenarioStart(new ScenarioInfo("foo", "foo_desc"));
+                var testRunner1 = TestRunnerManager.GetTestRunnerForAssembly(anAssembly, "0", new RuntimeTestsContainerBuilder());
+                await testRunner1.OnFeatureStartAsync(new FeatureInfo(new CultureInfo("en-US", false), string.Empty, "sds", "sss"));
+                testRunner1.OnScenarioInitialize(new ScenarioInfo("foo", "foo_desc", null, null));
+                await testRunner1.OnScenarioStartAsync();
                 var tracer1 = testRunner1.ScenarioContext.ScenarioContainer.Resolve<ITestTracer>();
 
-                var testRunner2 = TestRunnerManager.GetTestRunner(anAssembly, 1);
-                testRunner2.OnFeatureStart(new FeatureInfo(new CultureInfo("en-US"), "sds", "sss"));
-                testRunner2.OnScenarioStart(new ScenarioInfo("foo", "foo_desc"));
+                var testRunner2 = TestRunnerManager.GetTestRunnerForAssembly(anAssembly, "1", new RuntimeTestsContainerBuilder());
+                await testRunner2.OnFeatureStartAsync(new FeatureInfo(new CultureInfo("en-US", false), string.Empty, "sds", "sss"));
+                testRunner2.OnScenarioInitialize(new ScenarioInfo("foo", "foo_desc", null, null));
+                await testRunner1.OnScenarioStartAsync();
                 var tracer2 = testRunner2.ScenarioContext.ScenarioContainer.Resolve<ITestTracer>();
 
                 tracer1.Should().NotBeSameAs(tracer2);
-            }
-            
+            }       
         }
     }
-
 }

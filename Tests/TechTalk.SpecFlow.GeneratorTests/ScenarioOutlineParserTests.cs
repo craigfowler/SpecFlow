@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Gherkin;
 using Gherkin.Ast;
-using NUnit.Framework;
+using Xunit;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,12 +10,12 @@ using TechTalk.SpecFlow.Parser;
 
 namespace TechTalk.SpecFlow.GeneratorTests
 {
-    [TestFixture]
     public class ScenarioOutlineParserTests
     {
-        [Test]
-        public void Parser_throws_meaningful_exception_when_Examples_are_missing_in_Scenario_Outline()
+        [Fact]
+        public void Parser_doesnt_throw_exception_when_Examples_are_missing_in_Scenario_Outline()
         {
+            // this is accepted by Gherkin v6 and treated as Scenario
             var feature = @"Feature: Missing
                             Scenario Outline: No Examples";
 
@@ -23,11 +23,10 @@ namespace TechTalk.SpecFlow.GeneratorTests
 
             Action act = () => parser.Parse(new StringReader(feature), null);
 
-            act.ShouldThrow<SemanticParserException>().WithMessage("(2:29): Scenario Outline 'No Examples' has no examples defined")
-                .And.Location.Line.Should().Be(2);
+            act.Should().NotThrow();
         }
 
-        [Test]
+        [Fact]
         public void Parser_throws_meaningful_exception_when_Examples_are_empty_in_Scenario_Outline()
         {
             var feature = @"Feature: Missing
@@ -40,11 +39,11 @@ namespace TechTalk.SpecFlow.GeneratorTests
 
             Action act = () => parser.Parse(new StringReader(feature), null);
 
-            act.ShouldThrow<SemanticParserException>().WithMessage("(2:29): Scenario Outline 'No Examples' has no examples defined")
+            act.Should().Throw<SemanticParserException>().WithMessage("(2:29): Scenario Outline 'No Examples' has no examples defined")
                 .And.Location.Line.Should().Be(2);
         }
 
-        [Test]
+        [Fact]
         public void Parser_throws_meaningful_exception_when_Examples_have_header_but_are_empty_in_Scenario_Outline()
         {
             var feature = @"Feature: Missing
@@ -59,13 +58,14 @@ namespace TechTalk.SpecFlow.GeneratorTests
 
             Action act = () => parser.Parse(new StringReader(feature), null);
 
-            act.ShouldThrow<SemanticParserException>().WithMessage("(2:29): Scenario Outline 'No Examples' has no examples defined")
+            act.Should().Throw<SemanticParserException>().WithMessage("(2:29): Scenario Outline 'No Examples' has no examples defined")
                 .And.Location.Line.Should().Be(2);
         }
 
-        [Test]
-        public void Parser_throws_meaningful_exception_when_Examples_are_missing_in_multiple_Scenario_Outlines()
+        [Fact]
+        public void Parser_doesnt_throw_exception_when_Examples_are_missing_in_multiple_Scenario_Outlines()
         {
+            // these are accepted by Gherkin v6 and treated as Scenarios
             var feature = @"Feature: Missing
                             Scenario Outline: No Examples
                             Scenario Outline: Still no Examples";
@@ -74,13 +74,10 @@ namespace TechTalk.SpecFlow.GeneratorTests
 
             Action act = () => parser.Parse(new StringReader(feature), null);
 
-            var expectedErrors = new List<SemanticParserException> { new SemanticParserException("Scenario Outline 'No Examples' has no examples defined", new Location(2, 29)),
-                new SemanticParserException("Scenario Outline 'Still no Examples' has no examples defined", new Location(3, 29))};
-
-            act.ShouldThrow<CompositeParserException>().And.Errors.ShouldBeEquivalentTo(expectedErrors);
+            act.Should().NotThrow();
         }
 
-        [Test]
+        [Fact]
         public void Parser_doesnt_throw_exception_when_Examples_are_provided_for_Scenario_Outline()
         {
             var feature = @"Feature: Missing
@@ -94,7 +91,27 @@ namespace TechTalk.SpecFlow.GeneratorTests
 
             Action act = () => parser.Parse(new StringReader(feature), null);
 
-            act.ShouldNotThrow();
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Parser_throws_meaningful_exception_when_Examples_have_duplicate_header_in_Scenario_Outline()
+        {
+            var feature = @"Feature: Duplicate
+                            Scenario Outline: Duplicate Examples table headers
+                            Given I am <acting>
+                            
+                            Examples:
+                            | acting  | acting   |
+                            | driving | drinking |
+                            ";
+
+            var parser = new SpecFlowGherkinParser(CultureInfo.GetCultureInfo("en"));
+
+            Action act = () => parser.Parse(new StringReader(feature), null);
+
+            act.Should().Throw<SemanticParserException>().WithMessage("(2:29): Scenario Outline 'Duplicate Examples table headers' already contains an example column with header 'acting'")
+               .And.Location.Line.Should().Be(2);
         }
     }
 }

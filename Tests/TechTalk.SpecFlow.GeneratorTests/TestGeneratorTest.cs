@@ -3,45 +3,45 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.IO;
-using NUnit.Framework;
+using FluentAssertions;
+using Xunit;
 using TechTalk.SpecFlow.Configuration;
 using TechTalk.SpecFlow.Generator;
-using TechTalk.SpecFlow.Generator.Configuration;
-using TechTalk.SpecFlow.Generator.UnitTestConverter;
+using TechTalk.SpecFlow.Generator.CodeDom;
+using TechTalk.SpecFlow.Generator.Generation;
 using TechTalk.SpecFlow.Generator.UnitTestProvider;
 using TechTalk.SpecFlow.Parser;
-using TechTalk.SpecFlow.Utils;
 
 namespace TechTalk.SpecFlow.GeneratorTests
 {
     /// <summary>
     /// A test for testing cusomterized test generator provider
     /// </summary>
-    [TestFixture]
+    
     public class TestGeneratorTest
     {
         private const string SampleFeatureFile = @"
             Feature: Sample feature file that's got weird names
             
             Scenario: A doesn't come after B
-				Given there is something
-				When I do something
-				Then something should happen
+                Given there is something
+                When I do something
+                Then something should happen
 
             @mytag
-			Scenario Outline: Simple Scenario Outline that's got single quotes
-				Given there is something
+            Scenario Outline: Simple Scenario Outline that's got single quotes
+                Given there is something
                     """"""
                       long string
                     """"""
-				When I do <what>
+                When I do <what>
                     | foo | bar |
                     | 1   | 2   |
-				Then something should happen
-			Examples: 
-				| what           |
-				| something      |
-				| something else |
+                Then something should happen with <i> <%> <i, %>
+            Examples: 
+                | what           | %  | i  | i, %|
+                | something      | 11 |.23 | 23  |
+                | something else | 22 |.56 | 56  |
 ";
 
         public static UnitTestFeatureGenerator CreateUnitTestConverter(IUnitTestGeneratorProvider testGeneratorProvider)
@@ -57,25 +57,35 @@ namespace TechTalk.SpecFlow.GeneratorTests
         /// <summary>
         /// Generates the scenario example tests.
         /// </summary>
-        [Test]
+        [Fact]
         public void GenerateScenarioExampleTests()
         {
             var parser = new SpecFlowGherkinParser(new CultureInfo("en-US"));
             using (var reader = new StringReader(SampleFeatureFile))
             {
                 var feature = parser.Parse(reader, null);
-                Assert.IsNotNull(feature);
+                feature.Should().NotBeNull();
 
                 var sampleTestGeneratorProvider = new SimpleTestGeneratorProvider(new CodeDomHelper(CodeDomProviderLanguage.CSharp));
                 var converter = CreateUnitTestConverter(sampleTestGeneratorProvider);
                 CodeNamespace code = converter.GenerateUnitTestFixture(feature, null, null);
 
-                Assert.IsNotNull(code);
-
+                code.Should().NotBeNull();
+                
                 // make sure name space is changed
-                Assert.AreEqual(code.Name, SimpleTestGeneratorProvider.DefaultNameSpace);
+                Assert.Equal(code.Name, SimpleTestGeneratorProvider.DefaultNameSpace);
 
-                Assert.AreEqual(code.Types[0].Name, "SampleFeatureFileThatsGotWeirdNamesFeature");
+                Assert.Equal("SampleFeatureFileThatsGotWeirdNamesFeature", code.Types[0].Name);
+
+                foreach (var method in code.Types[0].Members.OfType<CodeMemberMethod>())
+                {
+                    var parameterNames = method.Parameters.Cast<CodeParameterDeclarationExpression>().Select(v => v.Name).ToArray();
+                    parameterNames.GroupBy(v => v).Where(kv => kv.Count() > 1).Should().BeEmpty("All parameters should be unique");
+                    foreach (var parameter in parameterNames)
+                    {
+                        parameter.Should().NotBeNullOrWhiteSpace();
+                    }
+                }
             }
         }
 

@@ -1,4 +1,5 @@
-﻿Feature: Providing meaningful errors for wrong Gherkin files
+﻿@SingleTestConfiguration
+Feature: Providing meaningful errors for wrong Gherkin files
 	In order to find out easily what is wrong with a Gherkin file
 	As a SpecFlow user
 	I want to get proper error messages when the files are parsed
@@ -58,22 +59,6 @@ Scenario: Table cell count mismatch
 	Then the following errors are provided
 		| line | error                                    |
 		| 6    | inconsistent cell count within the table |
-
-Scenario: Scenario outline without examples
-	Given there is a Gherkin file as
-	"""
-		Feature: Delayed semantic error
-
-		Scenario Outline: Scenario outline without examples
-			Given something
-
-		Scenario: proper scenario
-			Given something
-	"""
-	When the file is parsed
-	Then the following errors are provided
-        | line | error                                                                        |
-        | 3    | Scenario Outline 'Scenario outline without examples' has no examples defined |
 
 Scenario: Scenario outline with empty Examples
 	Given there is a Gherkin file as

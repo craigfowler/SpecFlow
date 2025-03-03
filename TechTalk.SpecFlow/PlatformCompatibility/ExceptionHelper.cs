@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace TechTalk.SpecFlow.Compatibility
 {
-    internal static class ExceptionHelper
+	internal static class ExceptionHelper
     {
         public static Exception PreserveStackTrace(this Exception ex, string methodInfo = null)
         {
@@ -14,7 +11,7 @@ namespace TechTalk.SpecFlow.Compatibility
             if (MonoHelper.IsMono)
                 MonoHelper.PreserveStackTrace(ex);
             else
-                typeof(Exception).GetMethod("InternalPreserveStackTrace", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(ex, new object[0]);
+                typeof(Exception).GetMethod("InternalPreserveStackTrace", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(ex, Array.Empty<object>());
 
             return ex;
         }

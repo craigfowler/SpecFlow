@@ -1,0 +1,61 @@
+.wy-side-nav-search {
+    background-color: #F4F7FD;
+}
+a, a:visited, a:hover {
+    color: #8588b6
+}
+
+.wy-menu-vertical a:hover {
+    background-color: white;
+}
+
+.wy-menu-vertical a {
+    color: #8588b6
+}
+
+.wy-menu {
+    background-color: #F4F7FD;
+}
+
+.wy-nav-side {
+    color:#F4F7FD;
+    background-color: #F4F7FD;
+}
+
+.wy-menu-vertical li.current {
+    background-color: #f8f5ff;
+}
+
+.caption-text {
+    color: black;
+}
+
+.wy-nav-content {
+    max-width: 80%;
+}
+
+/* override table width restrictions */
+@media screen and (min-width: 767px) {
+
+    .wy-table-responsive table td {
+       /* !important prevents the common CSS stylesheets from overriding
+          this as on RTD they are loaded after this stylesheet */
+       white-space: normal !important;
+    }
+ 
+    .wy-table-responsive {
+       overflow: visible !important;
+    }
+ }
+
+
+p > img {
+    border: 1px solid rgba(0, 0, 0, 0.11);
+    box-shadow: 0px 6px 20px rgba(69, 74, 109, 0.13);
+    border-radius: 4px;
+}
+
+.wy-body-for-nav 
+.wy-nav-content-wrap {
+    background: #F4F7FD!important;
+}

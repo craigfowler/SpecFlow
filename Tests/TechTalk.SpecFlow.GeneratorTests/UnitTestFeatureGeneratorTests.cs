@@ -1,11 +1,9 @@
-﻿using System;
-using System.CodeDom;
+﻿using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using BoDi;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using TechTalk.SpecFlow.Generator;
 using TechTalk.SpecFlow.Generator.Interfaces;
 using TechTalk.SpecFlow.Generator.UnitTestConverter;
@@ -18,25 +16,25 @@ namespace TechTalk.SpecFlow.GeneratorTests
 {
     public abstract class UnitTestFeatureGeneratorTestsBase
     {
-        protected IObjectContainer container;
-        protected Mock<IUnitTestGeneratorProvider> unitTestGeneratorProviderMock;
-
-        [SetUp]
-        public void Setup()
+        protected UnitTestFeatureGeneratorTestsBase()
         {
             SetupInternal();
         }
 
+        protected Mock<IUnitTestGeneratorProvider> UnitTestGeneratorProviderMock { get; private set; }
+        protected IObjectContainer Container { get; private set; }
+
         protected virtual void SetupInternal()
         {
-            container = GeneratorContainerBuilder.CreateContainer(new SpecFlowConfigurationHolder(ConfigSource.Default, null), new ProjectSettings());
-            unitTestGeneratorProviderMock = new Mock<IUnitTestGeneratorProvider>();
-            container.RegisterInstanceAs(unitTestGeneratorProviderMock.Object);
+            Container = new GeneratorContainerBuilder().CreateContainer(new SpecFlowConfigurationHolder(ConfigSource.Default, null), new ProjectSettings(), Enumerable.Empty<GeneratorPluginInfo>());
+            UnitTestGeneratorProviderMock = new Mock<IUnitTestGeneratorProvider>();
+            UnitTestGeneratorProviderMock.Setup(utp => utp.GetTestWorkerIdExpression()).Returns(new CodePrimitiveExpression(null));
+            Container.RegisterInstanceAs(UnitTestGeneratorProviderMock.Object);
         }
 
         protected IFeatureGenerator CreateUnitTestFeatureGenerator()
         {
-            return container.Resolve<UnitTestFeatureGeneratorProvider>().CreateGenerator(ParserHelper.CreateAnyDocument());
+            return Container.Resolve<UnitTestFeatureGeneratorProvider>().CreateGenerator(ParserHelper.CreateAnyDocument());
         }
 
         protected void GenerateFeature(IFeatureGenerator generator, SpecFlowDocument document)
@@ -45,15 +43,15 @@ namespace TechTalk.SpecFlow.GeneratorTests
         }
     }
 
-    [TestFixture]
+    
     public class UnitTestFeatureGeneratorTests : UnitTestFeatureGeneratorTestsBase
     {
-        [Test]
+        [Fact]
         public void Should_pass_feature_tags_as_test_class_category()
         {
             var generator = CreateUnitTestFeatureGenerator();
             string[] generatedCats = new string[0];
-            unitTestGeneratorProviderMock.Setup(ug => ug.SetTestClassCategories(It.IsAny<TestClassGenerationContext>(), It.IsAny<IEnumerable<string>>()))
+            UnitTestGeneratorProviderMock.Setup(ug => ug.SetTestClassCategories(It.IsAny<TestClassGenerationContext>(), It.IsAny<IEnumerable<string>>()))
                 .Callback((TestClassGenerationContext ctx, IEnumerable<string> cats) => generatedCats = cats.ToArray());
 
             var theDocument = ParserHelper.CreateDocument(new string[] { "foo", "bar" });
@@ -63,12 +61,12 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generatedCats.Should().Equal(new string[] {"foo", "bar"});
         }
 
-        [Test]
+        [Fact]
         public void Should_pass_scenario_tags_as_test_method_category()
         {
             var generator = CreateUnitTestFeatureGenerator();
             string[] generatedCats = new string[0];
-            unitTestGeneratorProviderMock.Setup(ug => ug.SetTestMethodCategories(It.IsAny<TestClassGenerationContext>(), It.IsAny<CodeMemberMethod>(), It.IsAny<IEnumerable<string>>()))
+            UnitTestGeneratorProviderMock.Setup(ug => ug.SetTestMethodCategories(It.IsAny<TestClassGenerationContext>(), It.IsAny<CodeMemberMethod>(), It.IsAny<IEnumerable<string>>()))
                 .Callback((TestClassGenerationContext ctx, CodeMemberMethod _, IEnumerable<string> cats) => generatedCats = cats.ToArray());
 
             var theFeature = ParserHelper.CreateDocument(scenarioTags: new []{ "foo", "bar"});
@@ -78,12 +76,12 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generatedCats.Should().Equal(new string[] {"foo", "bar"});
         }
 
-        [Test]
+        [Fact]
         public void Should_not_pass_feature_tags_as_test_method_category()
         {
             var generator = CreateUnitTestFeatureGenerator();
             string[] generatedCats = new string[0];
-            unitTestGeneratorProviderMock.Setup(ug => ug.SetTestMethodCategories(It.IsAny<TestClassGenerationContext>(), It.IsAny<CodeMemberMethod>(), It.IsAny<IEnumerable<string>>()))
+            UnitTestGeneratorProviderMock.Setup(ug => ug.SetTestMethodCategories(It.IsAny<TestClassGenerationContext>(), It.IsAny<CodeMemberMethod>(), It.IsAny<IEnumerable<string>>()))
                 .Callback((TestClassGenerationContext ctx, CodeMemberMethod _, IEnumerable<string> cats) => generatedCats = cats.ToArray());
 
             var theFeature = ParserHelper.CreateDocument(tags: new []{ "featuretag"}, scenarioTags: new[] { "foo", "bar" });
@@ -93,11 +91,11 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generatedCats.Should().Equal(new string[] {"foo", "bar"});
         }
 
-        [Test]
+        [Fact]
         public void Should_not_pass_decorated_feature_tag_as_test_class_category()
         {
             var decoratorMock = DecoratorRegistryTests.CreateTestClassTagDecoratorMock("decorated");
-            container.RegisterInstanceAs(decoratorMock.Object, "decorated");
+            Container.RegisterInstanceAs(decoratorMock.Object, "decorated");
 
             var generator = CreateUnitTestFeatureGenerator();
 
@@ -105,14 +103,14 @@ namespace TechTalk.SpecFlow.GeneratorTests
 
             GenerateFeature(generator, theFeature);
 
-            unitTestGeneratorProviderMock.Verify(ug => ug.SetTestClassCategories(It.IsAny<TestClassGenerationContext>(), It.Is<IEnumerable<string>>(cats => !cats.Contains("decorated"))));
+            UnitTestGeneratorProviderMock.Verify(ug => ug.SetTestClassCategories(It.IsAny<TestClassGenerationContext>(), It.Is<IEnumerable<string>>(cats => !cats.Contains("decorated"))));
         }
 
-        [Test]
+        [Fact]
         public void Should_not_pass_decorated_scenario_tag_as_test_method_category()
         {
             var decoratorMock = DecoratorRegistryTests.CreateTestMethodTagDecoratorMock("decorated");
-            container.RegisterInstanceAs(decoratorMock.Object, "decorated");
+            Container.RegisterInstanceAs(decoratorMock.Object, "decorated");
 
             var generator = CreateUnitTestFeatureGenerator();
 
@@ -120,7 +118,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
 
             GenerateFeature(generator, theFeature);
 
-            unitTestGeneratorProviderMock.Verify(ug => ug.SetTestMethodCategories(It.IsAny<TestClassGenerationContext>(), It.IsAny<CodeMemberMethod>(), It.Is<IEnumerable<string>>(cats => !cats.Contains("decorated"))));
+            UnitTestGeneratorProviderMock.Verify(ug => ug.SetTestMethodCategories(It.IsAny<TestClassGenerationContext>(), It.IsAny<CodeMemberMethod>(), It.Is<IEnumerable<string>>(cats => !cats.Contains("decorated"))));
         }
     }
 }

@@ -1,17 +1,15 @@
-﻿using System;
-using System.Linq;
-using NUnit.Framework;
+﻿using Xunit;
 using TechTalk.SpecFlow.Generator;
-using TechTalk.SpecFlow.Generator.Configuration;
 using TechTalk.SpecFlow.Generator.UnitTestConverter;
 using FluentAssertions;
 using TechTalk.SpecFlow.Configuration;
+using TechTalk.SpecFlow.Generator.CodeDom;
+using TechTalk.SpecFlow.Generator.Generation;
 using TechTalk.SpecFlow.Generator.UnitTestProvider;
-using TechTalk.SpecFlow.Utils;
 
 namespace TechTalk.SpecFlow.GeneratorTests
 {
-    [TestFixture]
+    
     public class FeatureGeneratorProviderTests
     {
         private static UnitTestFeatureGeneratorProvider CreateUnitTestFeatureGeneratorProvider()
@@ -19,19 +17,19 @@ namespace TechTalk.SpecFlow.GeneratorTests
             Configuration.SpecFlowConfiguration generatorSpecFlowConfiguration = ConfigurationLoader.GetDefault();
             CodeDomHelper codeDomHelper = new CodeDomHelper(CodeDomProviderLanguage.CSharp);
             UnitTestFeatureGenerator unitTestFeatureGenerator = new UnitTestFeatureGenerator(
-                new NUnitTestGeneratorProvider(codeDomHelper), codeDomHelper, generatorSpecFlowConfiguration, new DecoratorRegistryStub());
+                new NUnit3TestGeneratorProvider(codeDomHelper), codeDomHelper, generatorSpecFlowConfiguration, new DecoratorRegistryStub());
 
             return new UnitTestFeatureGeneratorProvider(unitTestFeatureGenerator);
         }
 
-        [Test]
+        [Fact]
         public void Should_UnitTestFeatureGeneratorProvider_have_low_priority()
         {
             var generatorProvider = CreateUnitTestFeatureGeneratorProvider();
             generatorProvider.Priority.Should().Be(int.MaxValue);
         }
 
-        [Test]
+        [Fact]
         public void Should_UnitTestFeatureGeneratorProvider_be_able_to_generate_anything()
         {
             var generatorProvider = CreateUnitTestFeatureGeneratorProvider();
@@ -39,7 +37,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generatorProvider.CanGenerate(anyFeature).Should().Be(true);
         }
 
-        [Test]
+        [Fact]
         public void Should_UnitTestFeatureGeneratorProvider_create_valid_instance()
         {
             var generatorProvider = CreateUnitTestFeatureGeneratorProvider();
@@ -49,7 +47,7 @@ namespace TechTalk.SpecFlow.GeneratorTests
             generator.Should().NotBeNull();
         }
 
-        [Test]
+        [Fact]
         public void Should_UnitTestFeatureGeneratorProvider_create_UnitTestFeatureGenerator_instance()
         {
             var generatorProvider = CreateUnitTestFeatureGeneratorProvider();

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net45</TargetFramework>
+    <TargetFramework>net461</TargetFramework>
     <AssemblyName>Hacapp.Web.Tests.UI</AssemblyName>
     <RootNamespace>Hacapp.Web.Tests.UI</RootNamespace>
   </PropertyGroup>
@@ -11,9 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Features\WorkflowDefinition\CreateWorkflowDefinition.feature">
+    <None Update=".\Features\WorkflowDefinition\CreateWorkflowDefinition.feature">
       <CustomToolNamespace>CustomNameSpace</CustomToolNamespace>
     </None>
+
+    <None Include=".\Features\**\*.feature" />
 
     <None Include="..\..\LinkedFeature.feature" Link="LinkedFeature.feature" />
     <None Include="..\ExampleFeatures\Features\**\*.feature">

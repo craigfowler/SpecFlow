@@ -48,7 +48,7 @@ namespace TechTalk.SpecFlow.Assist
 
             AssertThatTheRequestIsValid(row, id);
 
-            return row[id] == "true";
+            return string.Equals(row[id], "true", StringComparison.OrdinalIgnoreCase);
         }
 
         public static double GetDouble(this TableRow row, string id)
@@ -70,17 +70,32 @@ namespace TechTalk.SpecFlow.Assist
             return Convert.ToChar(row[id]);
         }
 
-        internal static Enum GetEnumFromSingleInstanceRow<T>(this TableRow row)
+        public static T GetDiscreteEnum<T>(this TableRow row, string id) where T : struct, IConvertible
         {
-            return GetTheEnumValue<T>(row[1], row[0]);
+            var value = row[id].Replace(" ", string.Empty);
+            if (Enum.TryParse(value, true, out T @enum))
+                return @enum;
+
+            throw new InvalidOperationException($"No enum with value {value} found in enum {typeof(T).Name}");
         }
 
-        public static Enum GetEnum<T>(this TableRow row, string id)
+        public static T GetDiscreteEnum<T>(this TableRow row, string id, T defaultValue) where T : struct, IConvertible
+        {
+            var value = row[id].Replace(" ", string.Empty);
+            return Enum.TryParse(value, true, out T @enum) ? @enum : defaultValue;
+        }
+
+        public static TEnum GetEnumValue<TEnum>(this TableRow row, string id)
+        {
+            return (TEnum)Enum.Parse(typeof(TEnum), row[id]);
+        }
+
+        public static Enum GetEnum<T>(this TableRow row, string id) where T : class
         {
             return GetTheEnumValue<T>(row[id], id);
         }
 
-        private static Enum GetTheEnumValue<T>(string rowValue, string propertyName)
+        private static Enum GetTheEnumValue<T>(string rowValue, string propertyName) where T : class
         {
             var value = rowValue.Replace(" ", string.Empty);
 
@@ -145,7 +160,7 @@ namespace TechTalk.SpecFlow.Assist
         private static void AssertThatThisIsAnAcceptableBoolValue(TableRow row, string id)
         {
             var acceptedValues = new[] { "true", "false" };
-            if (acceptedValues.Contains(row[id]) == false)
+            if (acceptedValues.Contains(row[id], StringComparer.OrdinalIgnoreCase) == false)
                 throw new InvalidCastException($"You must use 'true' or 'false' when setting bools for {id}");
         }
 
@@ -159,5 +174,39 @@ namespace TechTalk.SpecFlow.Assist
         {
             return row.Any(x => x.Key == id);
         }
-    }
+
+		/// <summary>
+		/// Creates a new instance of <typeparamref name="T"/> from the <see cref="TableRow"/>.
+		/// </summary>
+		/// <typeparam name="T">The type of the instance to be created.</typeparam>
+		/// <param name="row">The table row.</param>
+		/// <returns>A new instance of <typeparamref name="T"/> filled with the data from the <see cref="TableRow"/>.</returns>
+		public static T CreateInstance<T>(this TableRow row)
+		{
+			var instanceTable = row.ToTable();
+			return instanceTable.CreateInstance<T>();
+		}
+
+		/// <summary>
+		/// Creates a new instance of <typeparamref name="T"/> from the <see cref="TableRow"/>.
+		/// </summary>
+		/// <typeparam name="T">The type of the instance to be created.</typeparam>
+		/// <param name="row">The table row.</param>
+		/// <param name="methodToCreateTheInstance">The method to create a new instance.</param>
+		/// <returns>A new instance of <typeparamref name="T"/> filled with the data from the <see cref="TableRow"/>.</returns>
+		public static T CreateInstance<T>(this TableRow row, Func<T> methodToCreateTheInstance)
+		{
+			var instanceTable = row.ToTable();
+			return instanceTable.CreateInstance(methodToCreateTheInstance);
+		}
+
+		private static Table ToTable(this TableRow row)
+		{
+			var instanceTable = new Table("Field", "Value");
+			foreach (var kvp in row)
+				instanceTable.AddRow(kvp.Key, kvp.Value);
+
+			return instanceTable;
+		}
+	}
 }

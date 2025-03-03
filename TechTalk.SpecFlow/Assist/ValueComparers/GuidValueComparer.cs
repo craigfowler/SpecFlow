@@ -7,6 +7,10 @@ namespace TechTalk.SpecFlow.Assist.ValueComparers
     {
         private readonly GuidValueRetriever guidValueRetriever;
 
+        public GuidValueComparer() : this(new GuidValueRetriever())
+        {
+        }
+
         public GuidValueComparer(GuidValueRetriever guidValueRetriever)
         {
             this.guidValueRetriever = guidValueRetriever;
@@ -27,7 +31,7 @@ namespace TechTalk.SpecFlow.Assist.ValueComparers
             {
                 if (guidValueRetriever.IsAValidGuid(expectedValue) == false) return false;
                 var guid = guidValueRetriever.GetValue(expectedValue);
-                if (guid == new Guid()) return true;
+                if (guid == Guid.Empty) return true;
                 return guid == (Guid)actualValue;
             }
         }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Gherkin.Ast;
 
 namespace TechTalk.SpecFlow.Parser
@@ -10,13 +8,18 @@ namespace TechTalk.SpecFlow.Parser
     public class SpecFlowFeature : Feature
     {
 
-        public SpecFlowFeature(Tag[] tags, Location location, string language, string keyword, string name, string description, ScenarioDefinition[] children)
+        public SpecFlowFeature(Tag[] tags, Location location, string language, string keyword, string name, string description, IHasLocation[] children)
             : base(tags, location, language, keyword, name, description, children)
         {
 
             if (Children != null)
             {
-                ScenarioDefinitions = Children.Where(child => !(child is Background)).ToList();
+                Func<IEnumerable<IHasLocation>, IEnumerable<StepsContainer>> getScenarioDefinitions =
+                    items => items.OfType<StepsContainer>().Where(child => !(child is Background));
+                ScenarioDefinitions = 
+                    getScenarioDefinitions(Children)
+                        .Concat(Children.OfType<Rule>().SelectMany(rule => getScenarioDefinitions(rule.Children)))
+                        .ToList();
 
                 var background = Children.SingleOrDefault(child => child is Background);
 
@@ -28,11 +31,14 @@ namespace TechTalk.SpecFlow.Parser
 
         }
 
-        public IEnumerable<ScenarioDefinition> ScenarioDefinitions { get; private set; }
+        public IEnumerable<StepsContainer> ScenarioDefinitions { get; private set; }
 
         public Background Background
         {
             get; private set;
         }
+
+        public bool HasFeatureBackground() => Background != null;
+
     }
 }

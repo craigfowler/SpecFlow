@@ -1,173 +1,59 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{453D8014-B6CD-4E86-80A8-D59F59092334}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TechTalk.SpecFlow.Generator</RootNamespace>
+    <TargetFrameworks>$(SpecFlow_Generator_TFM)</TargetFrameworks>
     <AssemblyName>TechTalk.SpecFlow.Generator</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\specflow.snk</AssemblyOriginatorKeyFile>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
+    <AssemblyOriginatorKeyFile>$(SpecFlow_KeyFile)</AssemblyOriginatorKeyFile>
+    <SignAssembly>$(SpecFlow_EnableStrongNameSigning)</SignAssembly>
+    <PublicSign>$(SpecFlow_PublicSign)</PublicSign>
+    <PackageId>TechTalk.SpecFlow.Generator</PackageId>
+    
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Gherkin, Version=5.0.0.0, Culture=neutral, PublicKeyToken=86496cfa5b4a5851, processorArchitecture=MSIL">
-      <HintPath>..\packages\Gherkin.5.0.0\lib\net45\Gherkin.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.configuration" />
-    <Reference Include="System.Core">
-    </Reference>
-    <Reference Include="System.Xml.Linq">
-    </Reference>
-    <Reference Include="System.Data.DataSetExtensions">
-    </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="..\CommonAssemblyInfo.cs">
-      <Link>Properties\CommonAssemblyInfo.cs</Link>
-    </Compile>
-    <Compile Include="BatchGenerator.cs" />
-    <Compile Include="Configuration\GeneratorInfo.cs" />
-    <Compile Include="Configuration\IGeneratorInfoProvider.cs" />
-    <Compile Include="Configuration\ISpecFlowConfigurationReader.cs" />
-    <Compile Include="DefaultDependencyProvider.cs" />
-    <Compile Include="Interfaces\SpecFlowConfigurationHolder.cs" />
-    <Compile Include="ITestUpToDateChecker.cs" />
-    <Compile Include="Plugins\GeneratorPluginEventArgs.cs" />
-    <Compile Include="Plugins\GeneratorPluginEvents.cs" />
-    <Compile Include="Plugins\GeneratorPluginLoader.cs" />
-    <Compile Include="Plugins\GeneratorPluginLocator.cs" />
-    <Compile Include="Plugins\GeneratorPluginParameters.cs" />
-    <Compile Include="Plugins\IGeneratorPlugin.cs" />
-    <Compile Include="Plugins\IGeneratorPluginLocator.cs" />
-    <Compile Include="Plugins\IGeneratorPluginLoader.cs" />
-    <Compile Include="Project\ISpecFlowProjectReader.cs" />
-    <Compile Include="Project\MsBuildProjectReader.cs" />
-    <Compile Include="Configuration\InProcGeneratorInfoProvider.cs" />
-    <Compile Include="Project\MSBuildRelativePathParser.cs" />
-    <Compile Include="RemotableGeneratorClass.cs" />
-    <Compile Include="TestClassGenerationContext.cs" />
-    <Compile Include="TestGeneratorException.cs" />
-    <Compile Include="Project\SpecFlowProject.cs" />
-    <Compile Include="Configuration\SpecFlowProjectConfiguration.cs" />
-    <Compile Include="Configuration\GeneratorConfigurationProvider.cs" />
-    <Compile Include="ErrorHandlingTestGenerator.cs" />
-    <Compile Include="FeatureFileInputExtensions.cs" />
-    <Compile Include="GeneratorContainerBuilder.cs" />
-    <Compile Include="IndentProcessingWriter.cs" />
-    <Compile Include="Interfaces\FeatureFileInput.cs" />
-    <Compile Include="Interfaces\GenerationSettings.cs" />
-    <Compile Include="GenerationTargetLanguage.cs" />
-    <Compile Include="GenerationTargetPlatform.cs" />
-    <Compile Include="Interfaces\ITestGenerator.cs" />
-    <Compile Include="Interfaces\ITestGeneratorFactory.cs" />
-    <Compile Include="Interfaces\ProjectPlatformSettings.cs" />
-    <Compile Include="Interfaces\ProjectSettings.cs" />
-    <Compile Include="Interfaces\TestGenerationError.cs" />
-    <Compile Include="Interfaces\TestGeneratorFactoryAttribute.cs" />
-    <Compile Include="Interfaces\TestGeneratorResult.cs" />
-    <Compile Include="Configuration\IGeneratorConfigurationProvider.cs" />
-    <Compile Include="ITestHeaderWriter.cs" />
-    <Compile Include="TestHeaderWriter.cs" />
-    <Compile Include="TestUpToDateChecker.cs" />
-    <Compile Include="Tracing\TextWriterTraceListener.cs" />
-    <Compile Include="UnitTestConverter\DecoratorRegistry.cs" />
-    <Compile Include="UnitTestConverter\FeatureGeneratorRegistry.cs" />
-    <Compile Include="UnitTestConverter\IgnoreDecorator.cs" />
-    <Compile Include="UnitTestConverter\ITestClassDecorator.cs" />
-    <Compile Include="UnitTestConverter\IFeatureGenerator.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UnitTestConverter\IFeatureGeneratorRegistry.cs" />
-    <Compile Include="UnitTestConverter\ParallelizeDecorator.cs" />
-    <Compile Include="UnitTestConverter\PriorityValues.cs" />
-    <Compile Include="UnitTestConverter\TagFilteredFeatureGeneratorProvider.cs" />
-    <Compile Include="UnitTestConverter\ITagFilterMatcher.cs" />
-    <Compile Include="UnitTestConverter\TagFilterMatcher.cs" />
-    <Compile Include="UnitTestConverter\UnitTestFeatureGeneratorProvider.cs" />
-    <Compile Include="UnitTestFeatureGenerator.cs" />
-    <Compile Include="TestGenerator.cs" />
-    <Compile Include="TestGeneratorFactory.cs" />
-    <Compile Include="UnitTestConverter\IFeatureGeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\MsTestV2GeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\NUnit3TestGeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\UnitTestGeneratorProviders.cs" />
-    <Compile Include="UnitTestProvider\MbUnit3TestGeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\MbUnitTestGeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\MsTest2010GeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\UnitTestGeneratorTraits.cs" />
-    <Compile Include="UnitTestProvider\XUnit2TestGeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\XUnitTestGeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\IUnitTestGeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\MsTestGeneratorProvider.cs" />
-    <Compile Include="UnitTestProvider\NUnitTestGeneratorProvider.cs" />
-    <Compile Include="Helpers\PathHelper.cs" />
+    <PackageReference Include="Gherkin" Version="19.0.3" />
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
+    <PackageReference Include="System.CodeDom" Version="4.4.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\TechTalk.SpecFlow.Parser\TechTalk.SpecFlow.Parser.csproj">
-      <Project>{7CCEF6D6-FC17-422E-9BED-EDD752B6496F}</Project>
-      <Name>TechTalk.SpecFlow.Parser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TechTalk.SpecFlow\TechTalk.SpecFlow.csproj">
-      <Project>{413EE28C-4F89-4C6F-BA1E-2CDEE4CD43B4}</Project>
-      <Name>TechTalk.SpecFlow</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TechTalk.SpecFlow.Utils\TechTalk.SpecFlow.Utils.csproj">
-      <Project>{C0AF4A43-0C3B-47C7-86DE-79FB632B1453}</Project>
-      <Name>TechTalk.SpecFlow.Utils</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\TechTalk.SpecFlow.Parser\TechTalk.SpecFlow.Parser.csproj" />
+    <ProjectReference Include="..\TechTalk.SpecFlow.Utils\TechTalk.SpecFlow.Utils.csproj" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == '$(SpecFlow_FullFramework_Generator_TFM)'">
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Collections" />
+    <Reference Include="System.Diagnostics.Debug" />
+    <Reference Include="System.Runtime.Extensions" />
+    <Reference Include="System.Security.Principal" />
+    <Reference Include="System.Net.Primitives" />
+    <Reference Include="System.IO.FileSystem" />
+  </ItemGroup>
+  
+  <ItemGroup Condition="'$(TargetFramework)' == '$(SpecFlow_Core_Generator_TFM)' Or '$(TargetFramework)' == '$(SpecFlow_Net6_TFM)'">
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.1" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Collections" Version="4.3.0" />
+    <PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Extensions" Version="4.3.1" />
+    <PackageReference Include="System.Security.Principal" Version="4.3.0" />
+    <PackageReference Include="System.Net.Primitives" Version="4.3.1" />
+    <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
+  </ItemGroup>
+
   <ItemGroup>
-    <Folder Include="PlatformCompatibility\" />
+    <Folder Include="Properties\" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\GitVersionTask.4.0.0-beta0012\build\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.4.0.0-beta0012\build\GitVersionTask.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\GitVersionTask.4.0.0-beta0012\build\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersionTask.4.0.0-beta0012\build\GitVersionTask.targets'))" />
-  </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

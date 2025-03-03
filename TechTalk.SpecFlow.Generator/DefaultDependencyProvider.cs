@@ -1,9 +1,11 @@
 using BoDi;
 using TechTalk.SpecFlow.Configuration;
 using TechTalk.SpecFlow.Generator.Configuration;
+using TechTalk.SpecFlow.Generator.Generation;
 using TechTalk.SpecFlow.Generator.Interfaces;
 using TechTalk.SpecFlow.Generator.Plugins;
 using TechTalk.SpecFlow.Generator.UnitTestConverter;
+using TechTalk.SpecFlow.Parser;
 using TechTalk.SpecFlow.Tracing;
 using TechTalk.SpecFlow.Utils;
 
@@ -23,10 +25,8 @@ namespace TechTalk.SpecFlow.Generator
             container.RegisterTypeAs<TestHeaderWriter, ITestHeaderWriter>();
             container.RegisterTypeAs<TestUpToDateChecker, ITestUpToDateChecker>();
 
-            container.RegisterTypeAs<GeneratorPluginLocator, IGeneratorPluginLocator>();
             container.RegisterTypeAs<GeneratorPluginLoader, IGeneratorPluginLoader>();
             container.RegisterTypeAs<DefaultListener, ITraceListener>();
-
 
             container.RegisterTypeAs<UnitTestFeatureGenerator, UnitTestFeatureGenerator>();
             container.RegisterTypeAs<FeatureGeneratorRegistry, IFeatureGeneratorRegistry>();
@@ -36,12 +36,16 @@ namespace TechTalk.SpecFlow.Generator
             container.RegisterTypeAs<DecoratorRegistry, IDecoratorRegistry>();
             container.RegisterTypeAs<IgnoreDecorator, ITestClassTagDecorator>("ignore");
             container.RegisterTypeAs<IgnoreDecorator, ITestMethodTagDecorator>("ignore");
-            container.RegisterTypeAs<ParallelizeDecorator, ITestClassDecorator>("parallelize");
+            container.RegisterTypeAs<NonParallelizableDecorator, ITestClassDecorator>("nonparallelizable");
 
             container.RegisterInstanceAs(GenerationTargetLanguage.CreateCodeDomHelper(GenerationTargetLanguage.CSharp), GenerationTargetLanguage.CSharp, dispose: true);
             container.RegisterInstanceAs(GenerationTargetLanguage.CreateCodeDomHelper(GenerationTargetLanguage.VB), GenerationTargetLanguage.VB, dispose: true);
 
             container.RegisterTypeAs<ConfigurationLoader, IConfigurationLoader>();
+
+            container.RegisterTypeAs<SpecFlowGherkinParserFactory, IGherkinParserFactory>();
+            
+            container.RegisterTypeAs<SpecFlowJsonLocator, ISpecFlowJsonLocator>();
 
             RegisterUnitTestGeneratorProviders(container);
         }

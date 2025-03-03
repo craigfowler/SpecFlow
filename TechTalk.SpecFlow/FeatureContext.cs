@@ -1,15 +1,22 @@
+using System;
 using System.Diagnostics;
 using System.Globalization;
-#if SILVERLIGHT
-using TechTalk.SpecFlow.Compatibility;
-#endif
 using System.Threading;
 using BoDi;
 using TechTalk.SpecFlow.Configuration;
 
 namespace TechTalk.SpecFlow
 {
-    public class FeatureContext : SpecFlowContext
+    public interface IFeatureContext : ISpecFlowContext
+    {
+        FeatureInfo FeatureInfo { get; }
+
+        CultureInfo BindingCulture { get; }
+
+        IObjectContainer FeatureContainer { get; }
+    }
+
+    public class FeatureContext : SpecFlowContext, IFeatureContext
     {
         internal FeatureContext(IObjectContainer featureContainer, FeatureInfo featureInfo, SpecFlowConfiguration specFlowConfiguration)
         {
@@ -26,12 +33,14 @@ namespace TechTalk.SpecFlow
         #region Singleton
         private static bool isCurrentDisabled = false;
         private static FeatureContext current;
+
+        [Obsolete("Please get the FeatureContext via Context Injection - https://go.specflow.org/Migrate-FeatureContext-Current")]
         public static FeatureContext Current
         {
             get
             {
                 if (isCurrentDisabled)
-                    throw new SpecFlowException("The FeatureContext.Current static accessor cannot be used in multi-threaded execution. Try injecting the feature context to the binding class. See http://go.specflow.org/doc-multithreaded for details.");
+                    throw new SpecFlowException("The FeatureContext.Current static accessor cannot be used in multi-threaded execution. Try injecting the feature context to the binding class. See https://go.specflow.org/doc-multithreaded for details.");
                 if (current == null)
                 {
                     Debug.WriteLine("Accessing NULL FeatureContext");

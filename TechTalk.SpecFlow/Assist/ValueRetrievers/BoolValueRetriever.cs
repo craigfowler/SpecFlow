@@ -1,23 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace TechTalk.SpecFlow.Assist.ValueRetrievers
-{
-    public class BoolValueRetriever : IValueRetriever
-    {
-        public virtual bool GetValue(string value)
-        {
-            return value == "True" || value == "true";
-        }
+namespace TechTalk.SpecFlow.Assist.ValueRetrievers {
 
-        public object Retrieve(KeyValuePair<string, string> keyValuePair, Type targetType, Type propertyType)
-        {
-            return GetValue(keyValuePair.Value);
-        }
+    public class BoolValueRetriever : StructRetriever<bool> {
+        private static readonly List<string> MultiLingualTrueValues = new List<string> {
+            "true", "1", "thật", "to'g'ri", "to'g'ri", "سچ ہے", "правда", "doğru", "จริง", "నిజం", "дөрес", "உண்மை",
+            "sann", "verdadera", "verdadero", "prav", "pravda", "istina", "истинито", "истина", "adevărat", "verdade",
+            "prawdziwe", "درست است، واقعی", "ਸੱਚ ਹੈ", "hold", "ekte", "үнэн", "benar", "richteg", "motina", "taisnība",
+            "진실", "teH", "ನಿಜ", "bener", "vera", "vero", "satt", "igaz", "सच", "נָכוֹן", "સાચું", "αληθής", "stimmt", "certo",
+            "vraise", "totta", "tõsi", "vera", "waark", "Sandt", "vre", "真", "真", "veritable", "истински", "istinito", "ճիշտ", "صحيح", "wier"
+        };
 
-        public bool CanRetrieve(KeyValuePair<string, string> keyValuePair, Type targetType, Type propertyType)
-        {
-            return propertyType == typeof(bool);
+        protected override bool GetNonEmptyValue(string value) {
+            return !string.IsNullOrWhiteSpace(value) && MultiLingualTrueValues.Contains(value.ToLower());
         }
     }
 }

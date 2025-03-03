@@ -4,19 +4,23 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using TechTalk.SpecFlow.Assist.Attributes;
+using TechTalk.SpecFlow.Tracing;
 
 namespace TechTalk.SpecFlow.Assist
 {
     internal static class TEHelpers
     {
-        internal static T CreateTheInstanceWithTheDefaultConstructor<T>(Table table)
+        private static readonly Regex invalidPropertyNameRegex = new Regex(InvalidPropertyNamePattern, RegexOptions.Compiled);
+        private const string InvalidPropertyNamePattern = @"[^\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Nl}\p{Nd}_]";
+
+        internal static T CreateTheInstanceWithTheDefaultConstructor<T>(Table table, InstanceCreationOptions creationOptions)
         {
             var instance = (T)Activator.CreateInstance(typeof(T));
-            LoadInstanceWithKeyValuePairs(table, instance);
+            LoadInstanceWithKeyValuePairs(table, instance, creationOptions);
             return instance;
         }
 
-        internal static T CreateTheInstanceWithTheValuesFromTheTable<T>(Table table)
+        internal static T CreateTheInstanceWithTheValuesFromTheTable<T>(Table table, InstanceCreationOptions creationOptions)
         {
             var constructor = GetConstructorMatchingToColumnNames<T>(table);
             if (constructor == null)
@@ -26,15 +30,25 @@ namespace TechTalk.SpecFlow.Assist
 
             var constructorParameters = constructor.GetParameters();
             var parameterValues = new object[constructorParameters.Length];
+
+            var members = new List<string>(constructorParameters.Length);
             for (var parameterIndex = 0; parameterIndex < constructorParameters.Length; parameterIndex++)
             {
-                var parameterName = constructorParameters[parameterIndex].Name;
+                var parameter = constructorParameters[parameterIndex];
+                var parameterName = parameter.Name;
                 var member = (from m in membersThatNeedToBeSet
                               where string.Equals(m.MemberName, parameterName, StringComparison.OrdinalIgnoreCase)
                               select m).FirstOrDefault();
                 if (member != null)
+                {
+                    members.Add(member.MemberName);
                     parameterValues[parameterIndex] = member.GetValue();
+                }
+                else if (parameter.HasDefaultValue)
+                    parameterValues[parameterIndex] = parameter.DefaultValue;
             }
+
+            VerifyAllColumn(table, creationOptions, members);
             return (T)constructor.Invoke(parameterValues);
         }
 
@@ -53,13 +67,14 @@ namespace TechTalk.SpecFlow.Assist
             return (from constructor in typeof(T).GetConstructors()
                     where !projectedPropertyNames.Except(
                         from parameter in constructor.GetParameters()
-                        select parameter.Name).Any()
+                        select parameter.Name, StringComparer.OrdinalIgnoreCase).Any()
                     select constructor).FirstOrDefault();
         }
 
         internal static bool IsMemberMatchingToColumnName(MemberInfo member, string columnName)
         {
-            return member.Name.MatchesThisColumnName(columnName);
+            return member.Name.MatchesThisColumnName(columnName)
+                || IsMatchingAlias(member, columnName);
         }
 
         internal static bool MatchesThisColumnName(this string propertyName, string columnName)
@@ -73,46 +88,63 @@ namespace TechTalk.SpecFlow.Assist
         internal static string RemoveAllCharactersThatAreNotValidInAPropertyName(string name)
         {
             //Unicode groups allowed: Lu, Ll, Lt, Lm, Lo, Nl or Nd see https://msdn.microsoft.com/en-us/library/aa664670%28v=vs.71%29.aspx
-            return new Regex(@"[^\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Nl}\p{Nd}_]").Replace(name, string.Empty);
+            return invalidPropertyNameRegex.Replace(name, string.Empty);
         }
 
         internal static string NormalizePropertyNameToMatchAgainstAColumnName(string name)
         {
             // we remove underscores, because they should be equivalent to spaces that were removed too from the column names
-            return name.Replace("_", string.Empty);
+            // we also ignore accents
+            return name.Replace("_", string.Empty).ToIdentifier();
         }
 
-        internal static void LoadInstanceWithKeyValuePairs(Table table, object instance)
+        internal static void LoadInstanceWithKeyValuePairs(Table table, object instance, InstanceCreationOptions creationOptions)
         {
             var membersThatNeedToBeSet = GetMembersThatNeedToBeSet(table, instance.GetType());
+            var memberHandlers = membersThatNeedToBeSet.ToList();
+            var memberNames = memberHandlers.Select(h => h.MemberName);
 
-            membersThatNeedToBeSet.ToList()
-                                  .ForEach(x => x.Setter(instance, x.GetValue()));
+            VerifyAllColumn(table, creationOptions, memberNames);
+
+            memberHandlers.ForEach(x => x.Setter(instance, x.GetValue()));
         }
 
-        internal static IEnumerable<MemberHandler> GetMembersThatNeedToBeSet(Table table, Type type)
+        private static void VerifyAllColumn(Table table, InstanceCreationOptions creationOptions, IEnumerable<string> memberNames)
         {
-            var properties = from property in type.GetProperties()
-                             from row in table.Rows
-                             where TheseTypesMatch(type, property.PropertyType, row)
-                                   && (IsMemberMatchingToColumnName(property, row.Id())
-                                   || IsMatchingAlias(property, row.Id()))
-                             select new MemberHandler { Type = type, Row = row, MemberName = property.Name, PropertyType = property.PropertyType, Setter = (i, v) => property.SetValue(i, v, null) };
+            if (creationOptions?.VerifyAllColumnsBound == true)
+            {
+                var memberNameKeys = new HashSet<string>(memberNames);
+                var allIds = table.Rows.Select(r => r.Id()).ToList();
+                var missing = allIds.Where(m => !memberNameKeys.Contains(m)).ToList();
+                if (missing.Any())
+                {
+                    throw new ColumnCouldNotBeBoundException(missing);
+                }
+            }
+        }
 
-            var fields = from field in type.GetFields()
-                         from row in table.Rows
-                         where TheseTypesMatch(type, field.FieldType, row)
-                               && (IsMemberMatchingToColumnName(field, row.Id()) ||
-                                IsMatchingAlias(field, row.Id()))
-                         select new MemberHandler { Type = type, Row = row, MemberName = field.Name, PropertyType = field.FieldType, Setter = (i, v) => field.SetValue(i, v) };
+        internal static List<MemberHandler> GetMembersThatNeedToBeSet(Table table, Type type)
 
-            var memberHandlers = new List<MemberHandler>();
+        {
+            var properties = (from property in type.GetProperties()
+                              from row in table.Rows
+                              where TheseTypesMatch(type, property.PropertyType, row)
+                                    && IsMemberMatchingToColumnName(property, row.Id())
+                              select new MemberHandler { Type = type, Row = row, MemberName = property.Name, PropertyType = property.PropertyType, Setter = (i, v) => property.SetValue(i, v, null) }).ToList();
+
+            var fieldInfos = type.GetFields();
+            var fields = (from field in fieldInfos
+                          from row in table.Rows
+                          where TheseTypesMatch(type, field.FieldType, row)
+                                && IsMemberMatchingToColumnName(field, row.Id())
+                          select new MemberHandler { Type = type, Row = row, MemberName = field.Name, PropertyType = field.FieldType, Setter = (i, v) => field.SetValue(i, v) }).ToList();
+
+            var memberHandlers = new List<MemberHandler>(properties.Capacity + fields.Count);
 
             memberHandlers.AddRange(properties);
             memberHandlers.AddRange(fields);
 
             // tuple special case
-            var fieldInfos = type.GetFields();
             if (IsValueTupleType(type))
             {
                 if (fieldInfos.Length > 7)

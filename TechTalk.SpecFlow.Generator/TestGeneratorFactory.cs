@@ -1,22 +1,20 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using TechTalk.SpecFlow.Generator.Interfaces;
 
 namespace TechTalk.SpecFlow.Generator
 {
     public class TestGeneratorFactory : RemotableGeneratorClass, ITestGeneratorFactory
     {
-        // update this version to the latest version number, if there are changes in the test generation
-        public static readonly Version GeneratorVersion = new Version("2.3.0.0");
-
+        public static readonly Version GeneratorVersion = typeof(TestGeneratorFactory).Assembly.GetName().Version;
         public Version GetGeneratorVersion()
         {
             return GeneratorVersion;
         }
 
-        public ITestGenerator CreateGenerator(ProjectSettings projectSettings)
+        public ITestGenerator CreateGenerator(ProjectSettings projectSettings, IEnumerable<GeneratorPluginInfo> generatorPluginInfos)
         {
-            var container = GeneratorContainerBuilder.CreateContainer(projectSettings.ConfigurationHolder, projectSettings);
+            var container = new GeneratorContainerBuilder().CreateContainer(projectSettings.ConfigurationHolder, projectSettings, generatorPluginInfos);
             return container.Resolve<ITestGenerator>();
         }
     }

@@ -12,20 +12,13 @@ namespace TechTalk.SpecFlow.Configuration
         {
             get { return (LanguageConfigElement)this["language"]; }
             set { this["language"] = value; }
-        }  
-        
+        }
+
         [ConfigurationProperty("bindingCulture", IsRequired = false)]
         public BindingCultureConfigElement BindingCulture
         {
             get { return (BindingCultureConfigElement)this["bindingCulture"]; }
             set { this["bindingCulture"] = value; }
-        }
-
-        [ConfigurationProperty("unitTestProvider", IsRequired = false)]
-        public UnitTestProviderConfigElement UnitTestProvider
-        {
-            get { return (UnitTestProviderConfigElement)this["unitTestProvider"]; }
-            set { this["unitTestProvider"] = value; }
         }
 
         [ConfigurationProperty("generator", IsRequired = false)]
@@ -57,15 +50,7 @@ namespace TechTalk.SpecFlow.Configuration
             set { this["stepAssemblies"] = value; }
         }
 
-        [ConfigurationProperty("plugins", IsDefaultCollection = false, IsRequired = false)]
-        [ConfigurationCollection(typeof(PluginCollection), AddItemName = "add")]
-        public PluginCollection Plugins
-        {
-            get { return (PluginCollection)this["plugins"]; }
-            set { this["plugins"] = value; }
-        }
-
-        static public ConfigurationSectionHandler CreateFromXml(string xmlContent)
+        public static ConfigurationSectionHandler CreateFromXml(string xmlContent)
         {
             ConfigurationSectionHandler section = new ConfigurationSectionHandler();
             section.Init();
@@ -78,7 +63,7 @@ namespace TechTalk.SpecFlow.Configuration
             return section;
         }
 
-        static public ConfigurationSectionHandler CreateFromXml(XmlNode xmlContent)
+        public static ConfigurationSectionHandler CreateFromXml(XmlNode xmlContent)
         {
             ConfigurationSectionHandler section = new ConfigurationSectionHandler();
             section.Init();

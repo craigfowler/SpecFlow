@@ -1,35 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using TechTalk.SpecFlow.Bindings;
 using TechTalk.SpecFlow.Bindings.Reflection;
 
 namespace TechTalk.SpecFlow.RuntimeTests.Bindings
 {
-    [TestFixture]
+    
     public class BindingRegistryTests
     {
-        [Test]
+        [Fact]
         public void GetStepDefinitions_should_return_all_step_definitions()
         {
             var sut = new BindingRegistry();
 
-            var stepDefinitionBinding1 = new StepDefinitionBinding(StepDefinitionType.Given, @"foo.*", new Mock<IBindingMethod>().Object, null);
-            var stepDefinitionBinding2 = new StepDefinitionBinding(StepDefinitionType.When, @"bar.*", new Mock<IBindingMethod>().Object, null);
+            var stepDefinitionBinding1 = StepDefinitionHelper.CreateRegex(StepDefinitionType.Given, @"foo.*");
+            var stepDefinitionBinding2 = StepDefinitionHelper.CreateRegex(StepDefinitionType.When, @"bar.*");
             sut.RegisterStepDefinitionBinding(stepDefinitionBinding1);
             sut.RegisterStepDefinitionBinding(stepDefinitionBinding2);
 
             var result = sut.GetStepDefinitions();
 
-            result.Should().BeEquivalentTo(stepDefinitionBinding1, stepDefinitionBinding2);
+            result.Should().BeEquivalentTo(new List<IStepDefinitionBinding> { stepDefinitionBinding1, stepDefinitionBinding2 });
         }
 
-        [Test]
+        [Fact]
         public void GetHooks_should_return_all_hooks()
         {
             var sut = new BindingRegistry();
@@ -41,7 +38,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.Bindings
 
             var result = sut.GetHooks();
 
-            result.Should().BeEquivalentTo(hook1, hook2);
+            result.Should().BeEquivalentTo(new List<HookBinding> { hook1, hook2 });
         }
     }
 }

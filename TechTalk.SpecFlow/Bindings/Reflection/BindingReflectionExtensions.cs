@@ -12,18 +12,29 @@ namespace TechTalk.SpecFlow.Bindings.Reflection
             return string.Format("{2}.{0}({1})", bindingMethod.Name, string.Join(", ", bindingMethod.Parameters.Select(p => p.Type.Name).ToArray()), bindingMethod.Type.Name);
         }
 
-        public static bool IsAssignableTo(this IBindingType baseType, Type type)
+        public static bool IsAssignableTo(this Type type, IBindingType baseType)
         {
-            if (baseType is RuntimeBindingType)
-                return type.IsAssignableFrom(((RuntimeBindingType)baseType).Type);
+            if (baseType is RuntimeBindingType runtimeBindingType)
+                return runtimeBindingType.Type.IsAssignableFrom(type);
 
             if (type.FullName == baseType.FullName)
                 return true;
 
-            if (type.BaseType != null && IsAssignableTo(baseType, type.BaseType))
+            if (type.BaseType != null && IsAssignableTo(type.BaseType, baseType))
                 return true;
 
-            return type.GetInterfaces().Any(_if => IsAssignableTo(baseType, _if));
+            return type.GetInterfaces().Any(_if => IsAssignableTo(_if, baseType));
+        }
+
+        public static bool IsAssignableFrom(this Type baseType, IBindingType type)
+        {
+            if (type is IPolymorphicBindingType polymorphicBindingType)
+                return polymorphicBindingType.IsAssignableTo(new RuntimeBindingType(baseType));
+
+            if (type.FullName == baseType.FullName)
+                return true;
+
+            return false;
         }
 
         public static bool MethodEquals(this IBindingMethod method1, IBindingMethod method2)
@@ -34,8 +45,8 @@ namespace TechTalk.SpecFlow.Bindings.Reflection
             if (method1 == null || method2 == null)
                 return false;
 
-            if (method1 is RuntimeBindingMethod && method2 is RuntimeBindingMethod)
-                return ((RuntimeBindingMethod)method1).MethodInfo.Equals(((RuntimeBindingMethod)method2).MethodInfo);
+            if (method1 is RuntimeBindingMethod bindingMethod1 && method2 is RuntimeBindingMethod bindingMethod2)
+                return bindingMethod1.MethodInfo.Equals(bindingMethod2.MethodInfo);
 
             return method1.Name == method2.Name &&
                    method1.Type.TypeEquals(method2.Type) &&
@@ -44,8 +55,8 @@ namespace TechTalk.SpecFlow.Bindings.Reflection
 
         public static bool TypeEquals(this IBindingType type1, Type type2)
         {
-            if (type1 is RuntimeBindingType)
-                return ((RuntimeBindingType)type1).Type == type2;
+            if (type1 is RuntimeBindingType runtimeBindingType)
+                return runtimeBindingType.Type == type2;
 
             return TypeEquals(type1, new RuntimeBindingType(type2));
         }
@@ -58,8 +69,8 @@ namespace TechTalk.SpecFlow.Bindings.Reflection
             if (type1 == null || type2 == null)
                 return false;
 
-            if (type1 is RuntimeBindingType && type2 is RuntimeBindingType)
-                return ((RuntimeBindingType)type1).Type == ((RuntimeBindingType)type2).Type;
+            if (type1 is RuntimeBindingType bindingType1 && type2 is RuntimeBindingType bindingType2)
+                return bindingType1.Type == bindingType2.Type;
 
             return type1.FullName == type2.FullName;
         }
@@ -89,10 +100,12 @@ namespace TechTalk.SpecFlow.Bindings.Reflection
 
         internal static MethodInfo AssertMethodInfo(this IBindingMethod bindingMethod)
         {
-            var reflectionBindingMethod = bindingMethod as RuntimeBindingMethod;
-            if (reflectionBindingMethod == null)
-                throw new SpecFlowException("The binding method cannot be used for reflection: " + bindingMethod);
-            return reflectionBindingMethod.MethodInfo;
+            if (bindingMethod is RuntimeBindingMethod reflectionBindingMethod)
+            {
+                return reflectionBindingMethod.MethodInfo;
+            }
+
+            throw new SpecFlowException("The binding method cannot be used for reflection: " + bindingMethod);
         }
     }
 }

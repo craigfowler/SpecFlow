@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using BoDi;
-using Newtonsoft.Json;
-using TechTalk.SpecFlow.BindingSkeletons;
-using TechTalk.SpecFlow.Plugins;
+using SpecFlow.Internal.Json;
 
 namespace TechTalk.SpecFlow.Configuration.JsonConfig
 {
@@ -13,115 +8,104 @@ namespace TechTalk.SpecFlow.Configuration.JsonConfig
     {
         public SpecFlowConfiguration LoadJson(SpecFlowConfiguration specFlowConfiguration, string jsonContent)
         {
-            if (String.IsNullOrWhiteSpace(jsonContent)) throw new ArgumentNullException(nameof(jsonContent));
+            if (string.IsNullOrWhiteSpace(jsonContent))
+            {
+                throw new ArgumentNullException(nameof(jsonContent));
+            }
 
-            var jsonConfig = JsonConvert.DeserializeObject<JsonConfig>(jsonContent);
+            var jsonConfig = jsonContent.FromJson<JsonConfig>();
 
-
-            ContainerRegistrationCollection containerRegistrationCollection = specFlowConfiguration.CustomDependencies;
-            ContainerRegistrationCollection generatorContainerRegistrationCollection = specFlowConfiguration.GeneratorCustomDependencies;
-            CultureInfo featureLanguage = specFlowConfiguration.FeatureLanguage;
-            CultureInfo bindingCulture = specFlowConfiguration.BindingCulture;
-            string unitTestProvider = specFlowConfiguration.UnitTestProvider;
+            var containerRegistrationCollection = specFlowConfiguration.CustomDependencies;
+            var generatorContainerRegistrationCollection = specFlowConfiguration.GeneratorCustomDependencies;
+            var featureLanguage = specFlowConfiguration.FeatureLanguage;
+            var bindingCulture = specFlowConfiguration.BindingCulture;
             bool stopAtFirstError = specFlowConfiguration.StopAtFirstError;
-            MissingOrPendingStepsOutcome missingOrPendingStepsOutcome = specFlowConfiguration.MissingOrPendingStepsOutcome;
+            var missingOrPendingStepsOutcome = specFlowConfiguration.MissingOrPendingStepsOutcome;
             bool traceSuccessfulSteps = specFlowConfiguration.TraceSuccessfulSteps;
             bool traceTimings = specFlowConfiguration.TraceTimings;
-            TimeSpan minTracedDuration = specFlowConfiguration.MinTracedDuration;
-            StepDefinitionSkeletonStyle stepDefinitionSkeletonStyle = specFlowConfiguration.StepDefinitionSkeletonStyle;
-            List<string> additionalStepAssemblies = specFlowConfiguration.AdditionalStepAssemblies;
-            List<PluginDescriptor> pluginDescriptors = specFlowConfiguration.Plugins;
+            var minTracedDuration = specFlowConfiguration.MinTracedDuration;
+            bool coloredOutput = specFlowConfiguration.ColoredOutput;
+            var stepDefinitionSkeletonStyle = specFlowConfiguration.StepDefinitionSkeletonStyle;
+            var additionalStepAssemblies = specFlowConfiguration.AdditionalStepAssemblies;
             bool allowRowTests = specFlowConfiguration.AllowRowTests;
             bool allowDebugGeneratedFiles = specFlowConfiguration.AllowDebugGeneratedFiles;
-            bool markFeaturesParallelizable = specFlowConfiguration.MarkFeaturesParallelizable;
-            string[] skipParallelizableMarkerForTags = specFlowConfiguration.SkipParallelizableMarkerForTags;
+            var addNonParallelizableMarkerForTags = specFlowConfiguration.AddNonParallelizableMarkerForTags;
+            var obsoleteBehavior = specFlowConfiguration.ObsoleteBehavior;
 
-            var specFlowElement = jsonConfig.SpecFlow;
-            if (specFlowElement.Language != null)
+            if (jsonConfig.Language != null)
             {
-                if (specFlowElement.Language.Feature.IsNotNullOrWhiteSpace())
+                if (jsonConfig.Language.Feature.IsNotNullOrWhiteSpace())
                 {
-                    featureLanguage = CultureInfo.GetCultureInfo(specFlowElement.Language.Feature);
+                    featureLanguage = CultureInfo.GetCultureInfo(jsonConfig.Language.Feature);
                 }
             }
 
-            if (specFlowElement.BindingCulture != null)
+            if (jsonConfig.BindingCulture != null)
             {
-                if (specFlowElement.BindingCulture.Name.IsNotNullOrWhiteSpace())
+                if (jsonConfig.BindingCulture.Name.IsNotNullOrWhiteSpace())
                 {
-                    bindingCulture = CultureInfo.GetCultureInfo(specFlowElement.BindingCulture.Name);
+                    bindingCulture = CultureInfo.GetCultureInfo(jsonConfig.BindingCulture.Name);
                 }
             }
 
-            if (specFlowElement.UnitTestProvider != null)
+            if (jsonConfig.Runtime != null)
             {
-                if (specFlowElement.UnitTestProvider.Name.IsNotNullOrWhiteSpace())
+                missingOrPendingStepsOutcome = jsonConfig.Runtime.MissingOrPendingStepsOutcome;
+                stopAtFirstError = jsonConfig.Runtime.StopAtFirstError;
+                obsoleteBehavior = jsonConfig.Runtime.ObsoleteBehavior;
+
+                if (jsonConfig.Runtime.Dependencies != null)
                 {
-                    unitTestProvider = specFlowElement.UnitTestProvider.Name;
+                    foreach (var runtimeDependency in jsonConfig.Runtime.Dependencies)
+                    {
+                        containerRegistrationCollection.Add(runtimeDependency.ImplementationType, runtimeDependency.InterfaceType);
+                    }
                 }
             }
 
-            if (specFlowElement.Runtime != null)
+            if (jsonConfig.Generator != null)
             {
-                missingOrPendingStepsOutcome = specFlowElement.Runtime.MissingOrPendingStepsOutcome;
-                stopAtFirstError = specFlowElement.Runtime.StopAtFirstError;
+                allowDebugGeneratedFiles = jsonConfig.Generator.AllowDebugGeneratedFiles;
+                allowRowTests = jsonConfig.Generator.AllowRowTests;
+                addNonParallelizableMarkerForTags = jsonConfig.Generator.AddNonParallelizableMarkerForTags?.ToArray();
             }
 
-            if (specFlowElement.Generator != null)
+            if (jsonConfig.Trace != null)
             {
-                allowDebugGeneratedFiles = specFlowElement.Generator.AllowDebugGeneratedFiles;
-                allowRowTests = specFlowElement.Generator.AllowRowTests;
-                markFeaturesParallelizable = specFlowElement.Generator.MarkFeaturesParallelizable;
-                skipParallelizableMarkerForTags = specFlowElement.Generator.SkipParallelizableMarkerForTags.ToArray();
+                traceSuccessfulSteps = jsonConfig.Trace.TraceSuccessfulSteps;
+                traceTimings = jsonConfig.Trace.TraceTimings;
+                minTracedDuration = jsonConfig.Trace.MinTracedDuration;
+                stepDefinitionSkeletonStyle = jsonConfig.Trace.StepDefinitionSkeletonStyle;
+                coloredOutput = jsonConfig.Trace.ColoredOutput;
             }
 
-            if (specFlowElement.Trace != null)
+            if (jsonConfig.StepAssemblies != null)
             {
-                traceSuccessfulSteps = specFlowElement.Trace.TraceSuccessfulSteps;
-                traceTimings = specFlowElement.Trace.TraceTimings;
-                minTracedDuration = specFlowElement.Trace.MinTracedDuration;
-                stepDefinitionSkeletonStyle = specFlowElement.Trace.StepDefinitionSkeletonStyle;
-            }
-
-            if (specFlowElement.StepAssemblies != null)
-            {
-                foreach (var stepAssemblyEntry in specFlowElement.StepAssemblies)
+                foreach (var stepAssemblyEntry in jsonConfig.StepAssemblies)
                 {
                     additionalStepAssemblies.Add(stepAssemblyEntry.Assembly);
                 }
             }
 
-            if (specFlowElement.Plugins != null)
-            {
-                var pluginNames = pluginDescriptors.Select(m => m.Name).ToList();
-                foreach (var pluginEntry in specFlowElement.Plugins)
-                {
-                    if (pluginNames.Contains(pluginEntry.Name))
-                        continue;
-                    pluginDescriptors.Add(new PluginDescriptor(pluginEntry.Name, pluginEntry.Path, pluginEntry.Type, pluginEntry.Parameters));
-                    pluginNames.Add(pluginEntry.Name);
-                }
-            }
-
-
-            return new SpecFlowConfiguration(ConfigSource.Json,
-                                            containerRegistrationCollection,
-                                            generatorContainerRegistrationCollection,
-                                            featureLanguage,
-                                            bindingCulture,
-                                            unitTestProvider,
-                                            stopAtFirstError,
-                                            missingOrPendingStepsOutcome,
-                                            traceSuccessfulSteps,
-                                            traceTimings,
-                                            minTracedDuration,
-                                            stepDefinitionSkeletonStyle,
-                                            additionalStepAssemblies,
-                                            pluginDescriptors,
-                                            allowDebugGeneratedFiles,
-                                            allowRowTests,
-                                            markFeaturesParallelizable,
-                                            skipParallelizableMarkerForTags);
+            return new SpecFlowConfiguration(
+                ConfigSource.Json,
+                containerRegistrationCollection,
+                generatorContainerRegistrationCollection,
+                featureLanguage,
+                bindingCulture,
+                stopAtFirstError,
+                missingOrPendingStepsOutcome,
+                traceSuccessfulSteps,
+                traceTimings,
+                minTracedDuration,
+                stepDefinitionSkeletonStyle,
+                additionalStepAssemblies,
+                allowDebugGeneratedFiles,
+                allowRowTests,
+                addNonParallelizableMarkerForTags,
+                obsoleteBehavior,
+                coloredOutput
+            );
         }
     }
 }

@@ -1,11 +1,14 @@
 ﻿using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using TechTalk.SpecFlow.Configuration;
+using TechTalk.SpecFlow.Generator.CodeDom;
 using TechTalk.SpecFlow.Generator.Configuration;
 using TechTalk.SpecFlow.Generator.Interfaces;
 using TechTalk.SpecFlow.Generator.UnitTestConverter;
@@ -17,20 +20,29 @@ namespace TechTalk.SpecFlow.Generator
 {
     public class TestGenerator : ErrorHandlingTestGenerator, ITestGenerator
     {
-        protected readonly SpecFlow.Configuration.SpecFlowConfiguration specFlowConfiguration;
+        protected readonly SpecFlowConfiguration specFlowConfiguration;
         protected readonly ProjectSettings projectSettings;
         protected readonly ITestHeaderWriter testHeaderWriter;
         protected readonly ITestUpToDateChecker testUpToDateChecker;
-        private readonly IFeatureGeneratorRegistry featureGeneratorRegistry;
         protected readonly CodeDomHelper codeDomHelper;
+        private readonly IFeatureGeneratorRegistry featureGeneratorRegistry;
+        private readonly IGherkinParserFactory gherkinParserFactory;
 
-        public TestGenerator(SpecFlow.Configuration.SpecFlowConfiguration specFlowConfiguration, ProjectSettings projectSettings, ITestHeaderWriter testHeaderWriter, ITestUpToDateChecker testUpToDateChecker, IFeatureGeneratorRegistry featureGeneratorRegistry, CodeDomHelper codeDomHelper)
+
+        public TestGenerator(SpecFlowConfiguration specFlowConfiguration,
+            ProjectSettings projectSettings,
+            ITestHeaderWriter testHeaderWriter,
+            ITestUpToDateChecker testUpToDateChecker,
+            IFeatureGeneratorRegistry featureGeneratorRegistry,
+            CodeDomHelper codeDomHelper,
+            IGherkinParserFactory gherkinParserFactory)
         {
-            if (specFlowConfiguration == null) throw new ArgumentNullException("specFlowConfiguration");
-            if (projectSettings == null) throw new ArgumentNullException("projectSettings");
-            if (testHeaderWriter == null) throw new ArgumentNullException("testHeaderWriter");
-            if (testUpToDateChecker == null) throw new ArgumentNullException("testUpToDateChecker");
-            if (featureGeneratorRegistry == null) throw new ArgumentNullException("featureGeneratorRegistry");
+            if (specFlowConfiguration == null) throw new ArgumentNullException(nameof(specFlowConfiguration));
+            if (projectSettings == null) throw new ArgumentNullException(nameof(projectSettings));
+            if (testHeaderWriter == null) throw new ArgumentNullException(nameof(testHeaderWriter));
+            if (testUpToDateChecker == null) throw new ArgumentNullException(nameof(testUpToDateChecker));
+            if (featureGeneratorRegistry == null) throw new ArgumentNullException(nameof(featureGeneratorRegistry));
+            if (gherkinParserFactory == null) throw new ArgumentNullException(nameof(gherkinParserFactory));
 
             this.specFlowConfiguration = specFlowConfiguration;
             this.testUpToDateChecker = testUpToDateChecker;
@@ -38,6 +50,7 @@ namespace TechTalk.SpecFlow.Generator
             this.codeDomHelper = codeDomHelper;
             this.testHeaderWriter = testHeaderWriter;
             this.projectSettings = projectSettings;
+            this.gherkinParserFactory = gherkinParserFactory;
         }
 
         protected override TestGeneratorResult GenerateTestFileWithExceptions(FeatureFileInput featureFileInput, GenerationSettings settings)
@@ -55,6 +68,8 @@ namespace TechTalk.SpecFlow.Generator
             }
 
             string generatedTestCode = GetGeneratedTestCode(featureFileInput);
+            if(string.IsNullOrEmpty(generatedTestCode))
+                return new TestGeneratorResult(null, true);
 
             if (settings.CheckUpToDate && preliminaryUpToDateCheckResult != false)
             {
@@ -77,6 +92,9 @@ namespace TechTalk.SpecFlow.Generator
             {
                 var codeProvider = codeDomHelper.CreateCodeDomProvider();
                 var codeNamespace = GenerateTestFileCode(featureFileInput);
+
+                if (codeNamespace == null) return "";
+
                 var options = new CodeGeneratorOptions
                                   {
                                       BracingStyle = "C",
@@ -88,8 +106,13 @@ namespace TechTalk.SpecFlow.Generator
 
                 outputWriter.Flush();
                 var generatedTestCode = outputWriter.ToString();
-                return FixVBNetGlobalNamespace(generatedTestCode);
+                return FixVb(generatedTestCode);
             }
+        }
+
+        private string FixVb(string generatedTestCode)
+        {
+            return FixVBNetAsyncMethodDeclarations(FixVBNetGlobalNamespace(generatedTestCode));
         }
 
         private string FixVBNetGlobalNamespace(string generatedTestCode)
@@ -98,17 +121,33 @@ namespace TechTalk.SpecFlow.Generator
                     .Replace("Global.GlobalVBNetNamespace", "Global")
                     .Replace("GlobalVBNetNamespace", "Global");
         }
+        
+        /// <summary>
+        /// This is a workaround to allow async/await calls in VB.NET. Works in cooperation with CodeDomHelper.MarkCodeMemberMethodAsAsync() method
+        /// </summary>
+        private string FixVBNetAsyncMethodDeclarations(string generatedTestCode)
+        {
+            var functionRegex = new Regex(@"^([^\n]*)Function[ ]*([^(\n]*)(\([^\n]*\)[ ]*As) async([^\n]*)$", RegexOptions.Multiline);
+            var subRegex = new Regex(@"^([^\n]*)Sub[ ]*([^(\n]*)(\([^\n]*\)[ ]*As) async([^\n]*)$", RegexOptions.Multiline);
 
+            var result = functionRegex.Replace(generatedTestCode, "$1 Async Function $2$3$4");
+            result = subRegex.Replace(result, "$1 Async Sub $2$3$4");
+
+            return result;
+        }
+        
         private CodeNamespace GenerateTestFileCode(FeatureFileInput featureFileInput)
         {
             string targetNamespace = GetTargetNamespace(featureFileInput) ?? "SpecFlow.GeneratedTests";
 
-            var parser = new SpecFlowGherkinParser(specFlowConfiguration.FeatureLanguage);
+            var parser = gherkinParserFactory.Create(specFlowConfiguration.FeatureLanguage);
             SpecFlowDocument specFlowDocument;
             using (var contentReader = featureFileInput.GetFeatureFileContentReader(projectSettings))
             {
-                specFlowDocument = ParseContent(parser, contentReader, featureFileInput.GetFullPath(projectSettings));
+                specFlowDocument = ParseContent(parser, contentReader, GetSpecFlowDocumentLocation(featureFileInput));
             }
+
+            if (specFlowDocument.SpecFlowFeature == null) return null;
 
             var featureGenerator = featureGeneratorRegistry.CreateGenerator(specFlowDocument);
 
@@ -116,9 +155,24 @@ namespace TechTalk.SpecFlow.Generator
             return codeNamespace;
         }
 
-        protected virtual SpecFlowDocument ParseContent(SpecFlowGherkinParser parser, TextReader contentReader, string sourceFilePath)
+        private SpecFlowDocumentLocation GetSpecFlowDocumentLocation(FeatureFileInput featureFileInput)
         {
-            return parser.Parse(contentReader, sourceFilePath);
+            return new SpecFlowDocumentLocation(
+                featureFileInput.GetFullPath(projectSettings), 
+                GetFeatureFolderPath(featureFileInput.ProjectRelativePath));
+        }
+
+        private string GetFeatureFolderPath(string projectRelativeFilePath)
+        {
+            string directoryName = Path.GetDirectoryName(projectRelativeFilePath);
+            if (string.IsNullOrWhiteSpace(directoryName)) return null;
+
+            return string.Join("/", directoryName.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        protected virtual SpecFlowDocument ParseContent(IGherkinParser parser, TextReader contentReader, SpecFlowDocumentLocation documentLocation)
+        {
+            return parser.Parse(contentReader, documentLocation);
         }
 
         protected string GetTargetNamespace(FeatureFileInput featureFileInput)
@@ -126,16 +180,17 @@ namespace TechTalk.SpecFlow.Generator
             if (!string.IsNullOrEmpty(featureFileInput.CustomNamespace))
                 return featureFileInput.CustomNamespace;
 
-            if (projectSettings == null || string.IsNullOrEmpty(projectSettings.DefaultNamespace))
-                return null;
-
-            string targetNamespace = projectSettings.DefaultNamespace;
+            string targetNamespace = projectSettings == null || string.IsNullOrEmpty(projectSettings.DefaultNamespace)
+                ? null
+                : projectSettings.DefaultNamespace;
 
             var directoryName = Path.GetDirectoryName(featureFileInput.ProjectRelativePath);
             string namespaceExtension = string.IsNullOrEmpty(directoryName) ? null :
                 string.Join(".", directoryName.TrimStart('\\', '/', '.').Split('\\', '/').Select(f => f.ToIdentifier()).ToArray());
             if (!string.IsNullOrEmpty(namespaceExtension))
-                targetNamespace += "." + namespaceExtension;
+                targetNamespace = targetNamespace == null
+                    ? namespaceExtension
+                    : targetNamespace + "." + namespaceExtension;
             return targetNamespace;
         }
 
@@ -159,7 +214,7 @@ namespace TechTalk.SpecFlow.Generator
         {
             const string specFlowHeaderTemplate = @"------------------------------------------------------------------------------
  <auto-generated>
-     This code was generated by SpecFlow (http://www.specflow.org/).
+     This code was generated by SpecFlow (https://www.specflow.org/).
      SpecFlow Version:{0}
      SpecFlow Generator Version:{1}
 

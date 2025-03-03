@@ -1,20 +1,21 @@
 ﻿using BoDi;
 using FluentAssertions;
-using NUnit.Framework;
+using Moq;
+using Xunit;
 using TechTalk.SpecFlow.Infrastructure;
 using TechTalk.SpecFlow.Tracing;
 
 namespace TechTalk.SpecFlow.RuntimeTests.Infrastructure
 {
-    [TestFixture]
+    
     public class TestThreadContextTests : StepExecutionTestsBase
     {
         public ContextManager CreateContextManager(IObjectContainer testThreadContainer = null)
         {
-            return new ContextManager(MockRepository.Stub<ITestTracer>(), testThreadContainer ?? TestThreadContainer, ContainerBuilderStub);
+            return new ContextManager(new Mock<ITestTracer>().Object, testThreadContainer ?? TestThreadContainer, ContainerBuilderStub);
         }
 
-        [Test]
+        [Fact]
         public void Should_ContextManager_initialize_TestThreadContext_when_constructed()
         {
             var contextManager = CreateContextManager();
@@ -25,7 +26,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.Infrastructure
             result.Should().BeSameAs(TestThreadContainer.Resolve<TestThreadContext>());
         }
 
-        [Test]
+        [Fact]
         public void Should_expose_the_test_thread_container()
         {
             TestThreadContext result = ContextManagerStub.TestThreadContext;
@@ -34,7 +35,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.Infrastructure
             result.TestThreadContainer.Should().BeSameAs(TestThreadContainer);
         }
 
-        [Test]
+        [Fact]
         public void Should_disposing_event_fired_when_test_thread_container_disposes()
         {
             bool wasDisposingFired = false;
@@ -50,19 +51,20 @@ namespace TechTalk.SpecFlow.RuntimeTests.Infrastructure
             wasDisposingFired.Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void Should_be_able_to_resolve_from_scenario_container()
         {
             // this basically tests the special registration in DefaultDependencyProvider
 
-            var containerBuilder = new ContainerBuilder();
-            var testThreadContainer = containerBuilder.CreateTestThreadContainer(containerBuilder.CreateGlobalContainer());
+            var containerBuilder = new RuntimeTestsContainerBuilder();
+            var testThreadContainer = containerBuilder.CreateTestThreadContainer(containerBuilder.CreateGlobalContainer(typeof(TestThreadContextTests).Assembly));
             var contextManager = CreateContextManager(testThreadContainer);
-            contextManager.InitializeFeatureContext(new FeatureInfo(FeatureLanguage, "test feature", null));
-            contextManager.InitializeScenarioContext(new ScenarioInfo("test scenario", "test_description"));
+            contextManager.InitializeFeatureContext(new FeatureInfo(FeatureLanguage, "", "test feature", null));
+            contextManager.InitializeScenarioContext(new ScenarioInfo("test scenario", "test_description", null, null));
 
             contextManager.TestThreadContext.Should().NotBeNull();
 
+            var testThreadContext = contextManager.FeatureContext.FeatureContainer.Resolve<TestThreadContext>();
             var ctxFromScenarioContext = contextManager.ScenarioContext.ScenarioContainer.Resolve<TestThreadContext>();
 
             ctxFromScenarioContext.Should().BeSameAs(contextManager.TestThreadContext);

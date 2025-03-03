@@ -1,22 +1,19 @@
 ﻿using System.Globalization;
 using System.Threading;
 using FluentAssertions;
-using NUnit.Framework;
+using Xunit;
 using TechTalk.SpecFlow.Assist.ValueComparers;
 
 namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
 {
-    [TestFixture]
     public class FloatValueComparerTests
-	{
-		[SetUp]
-		public void TestSetup()
-		{
-			// this is required, because the tests depend on parsing decimals with the en-US culture
-			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-		}
+    {
+        public FloatValueComparerTests()
+        {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
+        }
 
-		[Test]
+        [Fact]
         public void Can_compare_if_the_value_is_a_single()
         {
             var valueComparer = new FloatValueComparer();
@@ -25,7 +22,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
             valueComparer.CanCompare(-1.24F).Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void Cannot_compare_if_the_value_is_null()
         {
             new FloatValueComparer()
@@ -33,7 +30,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
                 .Should().BeFalse();
         }
 
-        [Test]
+        [Fact]
         public void Cannot_compare_if_the_value_is_not_a_single()
         {
             var valueComparer = new FloatValueComparer();
@@ -42,7 +39,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
             valueComparer.CanCompare(3.14M).Should().BeFalse();
         }
 
-        [Test]
+        [Fact]
         public void Returns_true_when_the_single_values_match()
         {
             var valueComparer = new FloatValueComparer();
@@ -51,7 +48,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
             valueComparer.Compare("-1", -1.0F).Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void Returns_false_when_the_single_values_do_not_match()
         {
             var valueComparer = new FloatValueComparer();
@@ -60,7 +57,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.AssistTests.ValueComparerTests
             valueComparer.Compare("100.2874", 100.2873F).Should().BeFalse();
         }
 
-        [Test]
+        [Fact]
         public void Returns_false_when_the_expected_value_is_not_a_single()
         {
             var valueComparer = new FloatValueComparer();

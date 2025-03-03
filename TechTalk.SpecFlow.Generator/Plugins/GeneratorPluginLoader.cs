@@ -1,6 +1,6 @@
 ﻿using System;
+using System.IO;
 using System.Reflection;
-using TechTalk.SpecFlow.Generator.Interfaces;
 using TechTalk.SpecFlow.Infrastructure;
 using TechTalk.SpecFlow.Plugins;
 
@@ -8,35 +8,29 @@ namespace TechTalk.SpecFlow.Generator.Plugins
 {
     public class GeneratorPluginLoader : IGeneratorPluginLoader
     {
-        private readonly ProjectSettings projectSettings;
-        private readonly IGeneratorPluginLocator generatorPluginLocator;
-
-        public GeneratorPluginLoader(ProjectSettings projectSettings, IGeneratorPluginLocator generatorPluginLocator)
-        {
-            this.projectSettings = projectSettings;
-            this.generatorPluginLocator = generatorPluginLocator;
-        }
-
         public IGeneratorPlugin LoadPlugin(PluginDescriptor pluginDescriptor)
         {
-            var generatorPluginAssemblyPath = this.generatorPluginLocator.LocatePluginAssembly(pluginDescriptor);
-
             Assembly pluginAssembly;
             try
             {
-                pluginAssembly = Assembly.LoadFrom(generatorPluginAssemblyPath);
+
+#if NETCOREAPP
+                pluginAssembly = PluginAssemblyResolver.Load(pluginDescriptor.Path);
+#else
+                pluginAssembly = Assembly.LoadFrom(pluginDescriptor.Path);
+#endif
             }
             catch(Exception ex)
             {
-                throw new SpecFlowException($"Unable to load plugin assembly: {generatorPluginAssemblyPath}. Please check http://go.specflow.org/doc-plugins for details.", ex);
+                throw new SpecFlowException($"Unable to load plugin assembly: {pluginDescriptor.Path}. Please check https://go.specflow.org/doc-plugins for details.", ex);
             }
 
             var pluginAttribute = (GeneratorPluginAttribute)Attribute.GetCustomAttribute(pluginAssembly, typeof(GeneratorPluginAttribute));
             if (pluginAttribute == null)
-                throw new SpecFlowException("Missing [assembly:GeneratorPlugin] attribute in " + generatorPluginAssemblyPath);
+                throw new SpecFlowException("Missing [assembly:GeneratorPlugin] attribute in " + pluginDescriptor.Path);
 
             if (!typeof(IGeneratorPlugin).IsAssignableFrom((pluginAttribute.PluginType)))
-                throw new SpecFlowException($"Invalid plugin attribute in {generatorPluginAssemblyPath}. Plugin type must implement IGeneratorPlugin. Please check http://go.specflow.org/doc-plugins for details.");
+                throw new SpecFlowException($"Invalid plugin attribute in {pluginDescriptor.Path}. Plugin type must implement IGeneratorPlugin. Please check https://go.specflow.org/doc-plugins for details.");
 
             IGeneratorPlugin plugin;
             try
@@ -45,7 +39,7 @@ namespace TechTalk.SpecFlow.Generator.Plugins
             }
             catch (Exception ex)
             {
-                throw new SpecFlowException($"Invalid plugin in {generatorPluginAssemblyPath}. Plugin must have a default constructor that does not throw exception. Please check http://go.specflow.org/doc-plugins for details.", ex);
+                throw new SpecFlowException($"Invalid plugin in {pluginDescriptor.Path}. Plugin must have a default constructor that does not throw exception. Please check https://go.specflow.org/doc-plugins for details.", ex);
             }
 
             return plugin;
